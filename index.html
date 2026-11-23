@@ -1,0 +1,3393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#1e293b" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Finance Ledger" />
+  <title>Finance Ledger — Receivables, Payables &amp; Due Date Alarms</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    * {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    body {
+      background-color: #faf7f2;
+      color: #1e293b;
+      -webkit-font-smoothing: antialiased;
+    }
+    ::-webkit-scrollbar {
+      width: 7px;
+      height: 7px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f3efe6;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #d6cfc2;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #b8afa0;
+    }
+    .tabular-nums {
+      font-variant-numeric: tabular-nums;
+    }
+    @keyframes ringPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.06); }
+    }
+    .ring-pulse {
+      animation: ringPulse 1.1s ease-in-out infinite;
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-[#faf7f2] text-slate-800">
+  <div id="app" class="min-h-screen flex flex-col">
+    <!-- Top Header & Primary Actions -->
+    <header class="bg-[#fffdf9]/95 backdrop-blur-xs border-b border-[#e8e1d5] sticky top-0 z-30">
+      <div class="max-w-[1680px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex flex-wrap items-center justify-between gap-3 py-3.5">
+          <!-- Brand Title & Live Clock -->
+          <div class="flex items-center gap-3">
+            <div class="h-9 w-9 rounded-xl bg-slate-800 text-[#faf7f2] flex items-center justify-center font-semibold text-base shadow-2xs">
+              ₹
+            </div>
+            <div>
+              <div class="flex items-center gap-2 flex-wrap">
+                <h1 class="text-base sm:text-lg font-semibold tracking-tight text-slate-900">
+                  Finance Ledger
+                </h1>
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-[#f3efe6] text-slate-600 border border-[#e3dcd0]">
+                  As of 24 Nov 2026
+                </span>
+                <span id="liveClockPill" class="hidden md:inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-700 border border-slate-200/80 tabular-nums">
+                  --:--:--
+                </span>
+              </div>
+              <p class="text-xs text-slate-500 hidden sm:block">
+                Receivables &amp; Payables · Monthly Checklist (Nov 2026 – Jun 2027) · Custom Due Date Alarms
+              </p>
+            </div>
+          </div>
+
+          <!-- Cloud Status, User Selector, Alarms & Actions -->
+          <div class="flex flex-wrap items-center gap-2">
+            <!-- Cloud Sync Status Badge -->
+            <div
+              id="cloudSyncBadge"
+              class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-medium bg-[#f3efe6] text-slate-600 border border-[#e3dcd0]"
+              title="Cloud synchronization status"
+            >
+              <span id="cloudSyncDot" class="w-2 h-2 rounded-full bg-slate-400"></span>
+              <span id="cloudSyncLabel">Local Mode</span>
+            </div>
+
+            <!-- Active Finance Member -->
+            <div class="flex items-center gap-1.5 bg-[#faf7f2] border border-[#e3dcd0] rounded-xl px-2.5 py-1.5">
+              <span class="text-[11px] font-medium uppercase tracking-wider text-slate-400">User</span>
+              <select
+                id="activeMemberSelect"
+                aria-label="Select active finance team member"
+                class="bg-transparent text-xs sm:text-sm font-medium text-slate-800 focus:outline-none cursor-pointer pr-1"
+              ></select>
+            </div>
+
+            <!-- Alarms & Reminders Button -->
+            <button
+              id="openAlarmsModalBtn"
+              type="button"
+              class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs sm:text-sm font-medium bg-amber-50 text-amber-900 hover:bg-amber-100 border border-amber-200/90 active:scale-[0.99] transition cursor-pointer"
+            >
+              <svg class="w-4 h-4 text-amber-700" fill="none" stroke="currentColor" stroke-width="1.9" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+              </svg>
+              <span>Alarms</span>
+              <span id="headerAlarmCountBadge" class="px-1.5 py-0.2 rounded-full text-[11px] font-semibold bg-amber-200/80 text-amber-950 tabular-nums">
+                0
+              </span>
+            </button>
+
+            <!-- Install App Button -->
+            <button
+              id="openAppGuideBtn"
+              type="button"
+              class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs sm:text-sm font-medium bg-[#f3efe6] text-slate-800 hover:bg-[#eae3d5] border border-[#e3dcd0] active:scale-[0.99] transition cursor-pointer"
+            >
+              <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+              </svg>
+              <span class="hidden sm:inline">Install App</span>
+            </button>
+
+            <!-- Import / Export Button -->
+            <button
+              id="openIoModalBtn"
+              type="button"
+              class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs sm:text-sm font-medium bg-[#fffdf9] text-slate-700 border border-[#e3dcd0] hover:bg-[#f5f0e6] active:scale-[0.99] transition cursor-pointer"
+            >
+              <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+              </svg>
+              <span class="hidden md:inline">Import / Export</span>
+            </button>
+
+            <!-- Add Entry Button -->
+            <button
+              id="openAddModalBtn"
+              type="button"
+              class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium bg-slate-800 text-[#faf7f2] hover:bg-slate-700 active:scale-[0.99] transition shadow-2xs cursor-pointer"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+              <span>Add Entry</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 max-w-[1680px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+      <!-- 5 KPI Summary Cards -->
+      <section aria-label="Ledger summary metrics" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div class="bg-[#fffdf9] rounded-2xl border border-[#e8e1d5] p-4 shadow-2xs">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-medium text-slate-500">Total Principal (Active)</span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/80">
+              Receivable
+            </span>
+          </div>
+          <div id="kpiReceivablePrincipal" class="mt-2 text-xl sm:text-2xl font-semibold tracking-tight text-slate-900 tabular-nums">
+            ₹0
+          </div>
+          <p id="kpiReceivableCount" class="mt-1 text-xs text-slate-500 tabular-nums">
+            0 active receivable files
+          </p>
+        </div>
+
+        <div class="bg-[#fffdf9] rounded-2xl border border-[#e8e1d5] p-4 shadow-2xs">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-medium text-slate-500">Cycle Interest Receivable</span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#f3efe6] text-slate-600 border border-[#e3dcd0]">
+              Per Cycle
+            </span>
+          </div>
+          <div id="kpiReceivableInterest" class="mt-2 text-xl sm:text-2xl font-semibold tracking-tight text-slate-900 tabular-nums">
+            ₹0
+          </div>
+          <p class="mt-1 text-xs text-slate-500">
+            Scheduled recurring yield
+          </p>
+        </div>
+
+        <div class="bg-[#fffdf9] rounded-2xl border border-[#e8e1d5] p-4 shadow-2xs">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-medium text-slate-500">Total Received to Date</span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/80">
+              Settled
+            </span>
+          </div>
+          <div id="kpiTotalReceived" class="mt-2 text-xl sm:text-2xl font-semibold tracking-tight text-slate-900 tabular-nums">
+            ₹0
+          </div>
+          <p id="kpiTotalReceivedCount" class="mt-1 text-xs text-slate-500 tabular-nums">
+            0 monthly slots marked Received
+          </p>
+        </div>
+
+        <div class="bg-[#fffdf9] rounded-2xl border border-[#e8e1d5] p-4 shadow-2xs">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-medium text-slate-500">Upcoming Payables</span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-50 text-amber-800 border border-amber-200/80">
+              To Be Paid
+            </span>
+          </div>
+          <div id="kpiPayablePrincipal" class="mt-2 text-xl sm:text-2xl font-semibold tracking-tight text-slate-900 tabular-nums">
+            ₹0
+          </div>
+          <p id="kpiPayableInterest" class="mt-1 text-xs text-slate-500 tabular-nums">
+            ₹0 payout per cycle
+          </p>
+        </div>
+
+        <div class="bg-[#fffdf9] rounded-2xl border border-[#e8e1d5] p-4 shadow-2xs">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-medium text-slate-500">Active Alarms</span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-100/80 text-amber-900 border border-amber-200">
+              Reminders
+            </span>
+          </div>
+          <div id="kpiActiveAlarms" class="mt-2 text-xl sm:text-2xl font-semibold tracking-tight text-slate-900 tabular-nums">
+            0
+          </div>
+          <p id="kpiNextAlarmSummary" class="mt-1 text-xs text-slate-500 truncate">
+            No upcoming alarm scheduled
+          </p>
+        </div>
+      </section>
+
+      <!-- Filter Bar & Quick Alarm Settings Strip -->
+      <section aria-label="Ledger filters and controls" class="bg-[#fffdf9] rounded-2xl border border-[#e8e1d5] p-4 shadow-2xs space-y-3.5">
+        <div class="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-3.5">
+          <!-- Direction Tabs -->
+          <div class="inline-flex flex-wrap items-center bg-[#f3efe6] p-1 rounded-xl border border-[#e3dcd0] self-start">
+            <button
+              type="button"
+              data-direction="receivable"
+              class="direction-tab px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition cursor-pointer"
+            >
+              Receivables
+            </button>
+            <button
+              type="button"
+              data-direction="payable"
+              class="direction-tab px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition cursor-pointer"
+            >
+              Payables
+            </button>
+            <button
+              type="button"
+              data-direction="all"
+              class="direction-tab px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition cursor-pointer"
+            >
+              All Entries
+            </button>
+          </div>
+
+          <!-- Search, Team Filter, File Status & Utilities -->
+          <div class="flex flex-wrap items-center gap-2.5">
+            <div class="relative flex-1 sm:flex-initial min-w-[195px]">
+              <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 104.5 4.5a7.5 7.5 0 0012.15 12.15z" />
+              </svg>
+              <input
+                id="searchInput"
+                type="text"
+                placeholder="Search party, note, owner..."
+                class="w-full pl-9 pr-3 py-1.5 text-xs sm:text-sm bg-[#faf7f2] border border-[#e3dcd0] rounded-xl text-slate-800 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-slate-400 transition"
+              />
+            </div>
+
+            <select
+              id="ownerFilterSelect"
+              aria-label="Filter by finance team member"
+              class="px-3 py-1.5 text-xs sm:text-sm bg-[#faf7f2] border border-[#e3dcd0] rounded-xl text-slate-700 font-medium focus:outline-none focus:bg-white focus:border-slate-400 cursor-pointer"
+            ></select>
+
+            <select
+              id="fileStatusFilterSelect"
+              aria-label="Filter by file status"
+              class="px-3 py-1.5 text-xs sm:text-sm bg-[#faf7f2] border border-[#e3dcd0] rounded-xl text-slate-700 font-medium focus:outline-none focus:bg-white focus:border-slate-400 cursor-pointer"
+            >
+              <option value="active">Active Files</option>
+              <option value="ended">Closed ("Ended") Files</option>
+              <option value="all">All Files</option>
+            </select>
+
+            <button
+              id="openTeamModalBtn"
+              type="button"
+              class="px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-700 hover:text-slate-900 bg-[#faf7f2] hover:bg-[#f3efe6] border border-[#e3dcd0] rounded-xl transition cursor-pointer"
+            >
+              Team
+            </button>
+
+            <button
+              id="resetSampleBtn"
+              type="button"
+              class="px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-700 hover:text-slate-900 bg-[#faf7f2] hover:bg-[#f3efe6] border border-[#e3dcd0] rounded-xl transition cursor-pointer"
+              title="Restore default 18 Vedant receivables and sample payables"
+            >
+              Reset Default
+            </button>
+          </div>
+        </div>
+
+        <!-- Status Legend & Global Alarm Time Bar -->
+        <div class="pt-3 border-t border-[#efe9de] flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500">
+          <div class="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+            <span class="inline-flex items-center gap-1.5">
+              <span class="w-2.5 h-2.5 rounded-xs bg-[#efe9de] border border-[#d6cfc2] inline-block"></span>
+              Blank = Unselected
+            </span>
+            <span class="inline-flex items-center gap-1.5">
+              <span class="w-2.5 h-2.5 rounded-xs bg-amber-200 inline-block"></span>
+              Pending = Awaiting
+            </span>
+            <span class="inline-flex items-center gap-1.5">
+              <span class="w-2.5 h-2.5 rounded-xs bg-emerald-200 inline-block"></span>
+              Received = Completed &amp; advances Next Due Date
+            </span>
+            <span class="inline-flex items-center gap-1.5">
+              <span class="w-2.5 h-2.5 rounded-xs bg-slate-200 inline-block"></span>
+              NA = Single month only (never cascades)
+            </span>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <label for="quickGlobalAlarmTime" class="text-slate-600 font-medium">Default Alarm Time:</label>
+            <input
+              id="quickGlobalAlarmTime"
+              type="time"
+              class="px-2 py-1 text-xs font-medium bg-[#faf7f2] border border-[#e3dcd0] rounded-lg text-slate-800 tabular-nums focus:outline-none focus:border-slate-400"
+            />
+            <button
+              id="quickTestAlarmBtn"
+              type="button"
+              class="px-2.5 py-1 text-xs font-medium bg-slate-800 text-[#faf7f2] hover:bg-slate-700 rounded-lg transition cursor-pointer"
+            >
+              Test Alarm
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Ledger Table (No Frozen Columns) -->
+      <section aria-label="Payment ledger table" class="bg-[#fffdf9] rounded-2xl border border-[#e8e1d5] shadow-2xs overflow-hidden">
+        <div class="flex items-center justify-between px-4 sm:px-5 py-3.5 border-b border-[#e8e1d5] bg-[#faf7f2]/80">
+          <div class="flex items-center gap-2.5">
+            <h2 id="tableTitle" class="text-sm font-semibold text-slate-800">
+              Payments To Be Received
+            </h2>
+            <span id="tableCountBadge" class="px-2 py-0.5 rounded-full text-xs font-medium bg-[#efe9de] text-slate-700 tabular-nums">
+              0 entries
+            </span>
+          </div>
+          <div class="text-xs text-slate-500 hidden md:block">
+            Scroll freely across columns · Click the bell icon on any row to toggle or customize its Due Date Alarm
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse min-w-[1620px]">
+            <thead>
+              <tr class="bg-[#faf7f2] border-b border-[#e8e1d5] text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                <th class="py-3 px-3 w-11 text-center">#</th>
+                <th class="py-3 px-3 min-w-[180px]">Party &amp; Note</th>
+                <th class="py-3 px-3 min-w-[112px]">Disbursed</th>
+                <th class="py-3 px-3 min-w-[115px] text-right">Principal</th>
+                <th class="py-3 px-3 min-w-[82px]">Cycle</th>
+                <th class="py-3 px-3 min-w-[72px] text-right">Rate</th>
+                <th class="py-3 px-3 min-w-[120px] text-right">Interest / Cycle</th>
+                <th class="py-3 px-3 min-w-[122px]">Next Due Date</th>
+                <th class="py-3 px-3 min-w-[155px]">Due Alarm</th>
+                <th class="py-3 px-3 min-w-[96px]">Owner</th>
+                <th class="py-3 px-2 min-w-[104px] text-center bg-[#f5f0e6]/70 border-l border-[#e8e1d5]">Nov 2026</th>
+                <th class="py-3 px-2 min-w-[104px] text-center bg-[#f5f0e6]/70">Dec 2026</th>
+                <th class="py-3 px-2 min-w-[104px] text-center bg-[#f5f0e6]/70">Jan 2027</th>
+                <th class="py-3 px-2 min-w-[104px] text-center bg-[#f5f0e6]/70">Feb 2027</th>
+                <th class="py-3 px-2 min-w-[104px] text-center bg-[#f5f0e6]/70">Mar 2027</th>
+                <th class="py-3 px-2 min-w-[104px] text-center bg-[#f5f0e6]/70">Apr 2027</th>
+                <th class="py-3 px-2 min-w-[104px] text-center bg-[#f5f0e6]/70">May 2027</th>
+                <th class="py-3 px-2 min-w-[104px] text-center bg-[#f5f0e6]/70 border-r border-[#e8e1d5]">Jun 2027</th>
+                <th class="py-3 px-3 min-w-[185px] text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="ledgerTableBody" class="divide-y divide-[#f0ebe1] text-xs sm:text-[13px] text-slate-700"></tbody>
+          </table>
+        </div>
+
+        <div id="emptyState" class="hidden py-14 px-6 text-center">
+          <p class="text-sm font-medium text-slate-700">No entries match the current filters</p>
+          <p class="text-xs text-slate-400 mt-1">Adjust direction tabs, owner filter, file status, or add a new entry.</p>
+        </div>
+      </section>
+    </main>
+
+    <!-- Toast Container -->
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- Active Ringing Alarm Full-Screen Overlay -->
+    <div id="ringingAlarmOverlay" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/75 backdrop-blur-xs p-4">
+      <div class="bg-[#fffdf9] rounded-3xl border-2 border-amber-400 shadow-2xl w-full max-w-md p-6 sm:p-7 text-center space-y-5">
+        <div class="mx-auto w-16 h-16 rounded-2xl bg-amber-100 border border-amber-300 text-amber-800 flex items-center justify-center ring-pulse">
+          <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+          </svg>
+        </div>
+
+        <div class="space-y-1">
+          <span id="ringingAlarmBadge" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-900">
+            PAYMENT DUE ALARM
+          </span>
+          <h3 id="ringingAlarmParty" class="text-xl font-bold text-slate-900 pt-1">
+            Party Name
+          </h3>
+          <p id="ringingAlarmAmount" class="text-lg font-semibold text-emerald-700 tabular-nums">
+            ₹0
+          </p>
+          <p id="ringingAlarmDetails" class="text-xs text-slate-500">
+            Scheduled reminder triggered
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-2">
+          <button
+            id="snoozeAlarmBtn"
+            type="button"
+            class="px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium bg-[#f3efe6] text-slate-800 hover:bg-[#eae3d5] border border-[#e3dcd0] transition cursor-pointer"
+          >
+            Snooze 10 min
+          </button>
+          <button
+            id="markSettledFromAlarmBtn"
+            type="button"
+            class="px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium bg-emerald-700 text-white hover:bg-emerald-800 transition cursor-pointer"
+          >
+            Mark Received/Paid
+          </button>
+          <button
+            id="dismissAlarmBtn"
+            type="button"
+            class="px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium bg-slate-800 text-[#faf7f2] hover:bg-slate-700 transition cursor-pointer"
+          >
+            Dismiss Alarm
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Alarms & Reminders Drawer/Modal -->
+    <div id="alarmsModal" class="fixed inset-0 z-40 hidden items-center justify-center bg-slate-900/40 backdrop-blur-[1px] p-4">
+      <div class="bg-[#fffdf9] rounded-2xl border border-[#e3dcd0] shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-[#efe9de]">
+          <div>
+            <h3 class="text-base font-semibold text-slate-900">Due Date Alarms &amp; Custom Reminders</h3>
+            <p class="text-xs text-slate-500">Configure ringtone, desktop notifications, global default time, and per-entry alarms</p>
+          </div>
+          <button id="closeAlarmsModalBtn" type="button" class="text-slate-400 hover:text-slate-700 p-1 rounded-lg cursor-pointer">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <div class="p-6 overflow-y-auto space-y-5">
+          <!-- Global Alarm Controls -->
+          <div class="bg-[#faf7f2] border border-[#e3dcd0] rounded-2xl p-4 space-y-4">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+              <div>
+                <label for="modalGlobalTimeInput" class="block text-xs font-medium text-slate-600 mb-1">
+                  Global Preferred Alarm Time
+                </label>
+                <input
+                  id="modalGlobalTimeInput"
+                  type="time"
+                  class="w-full px-3 py-2 text-sm bg-white border border-[#e3dcd0] rounded-xl text-slate-800 tabular-nums focus:outline-none focus:border-slate-400"
+                />
+              </div>
+
+              <div>
+                <label for="alarmToneSelect" class="block text-xs font-medium text-slate-600 mb-1">
+                  Alarm Sound / Chime
+                </label>
+                <select
+                  id="alarmToneSelect"
+                  class="w-full px-3 py-2 text-sm bg-white border border-[#e3dcd0] rounded-xl text-slate-800 focus:outline-none focus:border-slate-400"
+                >
+                  <option value="chime">Gentle Harmonic Chime</option>
+                  <option value="bell">Classic Treasury Bell</option>
+                  <option value="pulse">Urgent Digital Pulse</option>
+                </select>
+              </div>
+
+              <div>
+                <label for="alarmVolumeInput" class="block text-xs font-medium text-slate-600 mb-1">
+                  Ringtone Volume (<span id="alarmVolumeLabel">80%</span>)
+                </label>
+                <input
+                  id="alarmVolumeInput"
+                  type="range"
+                  min="10"
+                  max="100"
+                  step="5"
+                  value="80"
+                  class="w-full mt-2 accent-slate-800 cursor-pointer"
+                />
+              </div>
+            </div>
+
+            <div class="flex flex-wrap items-center justify-between gap-2.5 pt-2 border-t border-[#e8e1d5]">
+              <div class="flex flex-wrap items-center gap-2">
+                <button
+                  id="testAlarmNowBtn"
+                  type="button"
+                  class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs sm:text-sm font-medium bg-slate-800 text-[#faf7f2] hover:bg-slate-700 rounded-xl transition cursor-pointer"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                  </svg>
+                  <span>Test Alarm Now</span>
+                </button>
+
+                <button
+                  id="requestNotificationPermBtn"
+                  type="button"
+                  class="px-3 py-2 text-xs sm:text-sm font-medium bg-white text-slate-700 hover:bg-[#f3efe6] border border-[#e3dcd0] rounded-xl transition cursor-pointer"
+                >
+                  Enable Desktop Alerts
+                </button>
+              </div>
+
+              <button
+                id="downloadAllIcsBtn"
+                type="button"
+                class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs sm:text-sm font-medium bg-amber-50 text-amber-900 hover:bg-amber-100 border border-amber-200 rounded-xl transition cursor-pointer"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.9" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span>Download All Calendar Alarms (.ics)</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Per-Entry Alarm Schedule List -->
+          <div class="space-y-2.5">
+            <div class="flex items-center justify-between">
+              <h4 class="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                Scheduled Entry Alarms (Active Files)
+              </h4>
+              <span id="modalAlarmListCount" class="text-xs text-slate-400">0 active alarms</span>
+            </div>
+
+            <div id="alarmsScheduleList" class="divide-y divide-[#efe9de] border border-[#e3dcd0] rounded-2xl overflow-hidden bg-white"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add / Edit Entry Modal (Includes Individual Reminder & Alarm Settings) -->
+    <div id="entryModal" class="fixed inset-0 z-40 hidden items-center justify-center bg-slate-900/40 backdrop-blur-[1px] p-4">
+      <div class="bg-[#fffdf9] rounded-2xl border border-[#e3dcd0] shadow-xl w-full max-w-xl max-h-[92vh] overflow-y-auto">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-[#efe9de]">
+          <h3 id="entryModalTitle" class="text-base font-semibold text-slate-900">Add Payment Entry</h3>
+          <button id="closeEntryModalBtn" type="button" class="text-slate-400 hover:text-slate-700 p-1 rounded-lg cursor-pointer">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <form id="entryForm" class="p-6 space-y-4">
+          <input type="hidden" id="entryIdInput" />
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-medium text-slate-600 mb-1">Direction</label>
+              <select
+                id="entryDirectionInput"
+                class="w-full px-3 py-2 text-sm bg-[#faf7f2] border border-[#e3dcd0] rounded-xl text-slate-800 focus:outline-none focus:bg-white focus:border-slate-400"
+              >
+                <option value="receivable">To Be Received (Receivable)</option>
+                <option value="payable">To Be Paid (Payable)</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-medium text-slate-600 mb-1">Party Name</label>
+              <input
+                id="entryPartyInput"
+                type="text"
+                required
+                placeholder="e.g., Vedant or Vendor Name"
+                class="w-full px-3 py-2 text-sm bg-[#faf7f2] border border-[#e3dcd0] rounded-xl text-slate-800 focus:outline-none focus:bg-white focus:border-slate-400"
+              />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label class="block text-xs font-medium text-slate-600 mb-1">Disbursement Date</label>
+              <input
+                id="entryDateInput"
+                type="date"
+                required
+                class="w-full px-3 py-2 text-sm bg-[#faf7f2] border border-[#e3dcd0] rounded-xl text-slate-800 focus:outline-none focus:bg-white focus:border-slate-400"
+              />
+            </div>
+
+            <div>
+              <label class="block text-xs font-medium text-slate-600 mb-1">Principal Amount (₹)</label>
+              <input
+                id="entryPrincipalInput"
+                type="number"
+                min="1"
+                step="any"
+                required
+                placeholder="50000"
+                class="w-full px-3 py-2 text-sm bg-[#faf7f2] border border-[#e3dcd0] rounded-xl text-slate-800 tabular-nums focus:outline-none focus:bg-white focus:border-slate-400"
+              />
+            </div>
+
+            <div>
+              <label class="block text-xs font-medium text-slate-600 mb-1">Billing Cycle</label>
+              <select
+                id="entryCycleInput"
+                class="w-full px-3 py-2 text-sm bg-[#faf7f2] border border-[#e3dcd0] rounded-xl text-slate-800 focus:outline-none focus:bg-white focus:border-slate-400"
+              >
+                <option value="monthly">Monthly (30-Day)</option>
+                <option value="15-day">15-Day Cycle</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label class="block text-xs font-medium text-slate-600 mb-1">Interest Rate (%)</label>
+              <input
+                id="entryRateInput"
+                type="number"
+                min="0"
+                step="0.01"
+                required
+                placeholder="10"
+                class="w-full px-3 py-2 text-sm bg-[#faf7f2] border border-[#e3dcd0] rounded-xl text-slate-800 tabular-nums focus:outline-none focus:bg-white focus:border-slate-400"
+              />
+            </div>
+
+            <div>
+              <label class="block text-xs font-medium text-slate-600 mb-1">
+                Interest / Cycle (₹) <span class="text-slate-400 font-normal">(auto)</span>
+              </label>
+              <input
+                id="entryInterestOverrideInput"
+                type="number"
+                min="0"
+                step="any"
+                placeholder="Auto from %"
+                class="w-full px-3 py-2 text-sm bg-[#faf7f2] border border-[#e3dcd0] rounded-xl text-slate-800 tabular-nums focus:outline-none focus:bg-white focus:border-slate-400"
+              />
+            </div>
+
+            <div>
+              <label class="block text-xs font-medium text-slate-600 mb-1">Finance Owner</label>
+              <select
+                id="entryOwnerInput"
+                class="w-full px-3 py-2 text-sm bg-[#faf7f2] border border-[#e3dcd0] rounded-xl text-slate-800 focus:outline-none focus:bg-white focus:border-slate-400"
+              ></select>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">Note / Reference (Optional)</label>
+            <input
+              id="entryNoteInput"
+              type="text"
+              placeholder="e.g., Tranche note or settlement details"
+              class="w-full px-3 py-2 text-sm bg-[#faf7f2] border border-[#e3dcd0] rounded-xl text-slate-800 focus:outline-none focus:bg-white focus:border-slate-400"
+            />
+          </div>
+
+          <!-- Per-Entry Alarm & Reminder Customization -->
+          <div class="bg-[#faf7f2] border border-[#e3dcd0] rounded-2xl p-4 space-y-3">
+            <div class="flex items-center justify-between">
+              <div>
+                <h4 class="text-xs font-semibold text-slate-800">Due Date Alarm &amp; Reminder</h4>
+                <p class="text-[11px] text-slate-500">Ring an alarm on your preferred time before or on the due date</p>
+              </div>
+              <label class="inline-flex items-center gap-2 cursor-pointer">
+                <input id="entryAlarmEnabledInput" type="checkbox" checked class="w-4 h-4 accent-slate-800 rounded-sm cursor-pointer" />
+                <span class="text-xs font-medium text-slate-800">Enabled</span>
+              </label>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">Preferred Alarm Time</label>
+                <input
+                  id="entryAlarmTimeInput"
+                  type="time"
+                  class="w-full px-3 py-2 text-sm bg-white border border-[#e3dcd0] rounded-xl text-slate-800 tabular-nums focus:outline-none focus:border-slate-400"
+                />
+              </div>
+
+              <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">When to Remind</label>
+                <select
+                  id="entryAlarmOffsetInput"
+                  class="w-full px-3 py-2 text-sm bg-white border border-[#e3dcd0] rounded-xl text-slate-800 focus:outline-none focus:border-slate-400"
+                >
+                  <option value="0">On Due Date</option>
+                  <option value="1">1 Day Before Due Date</option>
+                  <option value="2">2 Days Before Due Date</option>
+                  <option value="3">3 Days Before Due Date</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-[#efe9de]">
+            <button
+              id="cancelEntryModalBtn"
+              type="button"
+              class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-[#f3efe6] rounded-xl transition cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              class="px-4 py-2 text-sm font-medium bg-slate-800 text-[#faf7f2] hover:bg-slate-700 rounded-xl transition cursor-pointer"
+            >
+              Save Entry
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- End / Close File Modal -->
+    <div id="endFileModal" class="fixed inset-0 z-40 hidden items-center justify-center bg-slate-900/40 backdrop-blur-[1px] p-4">
+      <div class="bg-[#fffdf9] rounded-2xl border border-[#e3dcd0] shadow-xl w-full max-w-md overflow-hidden">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-[#efe9de]">
+          <h3 class="text-base font-semibold text-slate-900">End / Close File</h3>
+          <button id="closeEndFileModalBtn" type="button" class="text-slate-400 hover:text-slate-700 p-1 rounded-lg cursor-pointer">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <form id="endFileForm" class="p-6 space-y-4">
+          <input type="hidden" id="endFileEntryId" />
+          <p id="endFileSummary" class="text-xs sm:text-sm text-slate-600 bg-[#faf7f2] p-3 rounded-xl border border-[#e3dcd0]"></p>
+
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">Closing Date</label>
+            <input
+              id="endFileDateInput"
+              type="date"
+              required
+              class="w-full px-3 py-2 text-sm bg-[#faf7f2] border border-[#e3dcd0] rounded-xl text-slate-800 focus:outline-none focus:bg-white focus:border-slate-400"
+            />
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">Closing Note</label>
+            <input
+              id="endFileNoteInput"
+              type="text"
+              placeholder="e.g., Principal repaid in full"
+              class="w-full px-3 py-2 text-sm bg-[#faf7f2] border border-[#e3dcd0] rounded-xl text-slate-800 focus:outline-none focus:bg-white focus:border-slate-400"
+            />
+          </div>
+
+          <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-[#efe9de]">
+            <button
+              id="cancelEndFileBtn"
+              type="button"
+              class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-[#f3efe6] rounded-xl transition cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              class="px-4 py-2 text-sm font-medium bg-rose-700 text-white hover:bg-rose-800 rounded-xl transition cursor-pointer"
+            >
+              End File
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Delete Confirmation Modal (Custom Modal UI, no window.confirm) -->
+    <div id="deleteConfirmModal" class="fixed inset-0 z-40 hidden items-center justify-center bg-slate-900/40 backdrop-blur-[1px] p-4">
+      <div class="bg-[#fffdf9] rounded-2xl border border-[#e3dcd0] shadow-xl w-full max-w-sm overflow-hidden p-6 space-y-4">
+        <h3 class="text-base font-semibold text-slate-900">Remove Ledger Entry?</h3>
+        <p id="deleteConfirmText" class="text-xs sm:text-sm text-slate-600">
+          This will permanently remove this entry from your ledger.
+        </p>
+        <div class="flex items-center justify-end gap-2.5 pt-2">
+          <button
+            id="cancelDeleteBtn"
+            type="button"
+            class="px-4 py-2 text-xs sm:text-sm font-medium text-slate-600 hover:bg-[#f3efe6] rounded-xl transition cursor-pointer"
+          >
+            Cancel
+          </button>
+          <button
+            id="confirmDeleteBtn"
+            type="button"
+            class="px-4 py-2 text-xs sm:text-sm font-medium bg-rose-700 text-white hover:bg-rose-800 rounded-xl transition cursor-pointer"
+          >
+            Remove Entry
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Import / Export Modal -->
+    <div id="ioModal" class="fixed inset-0 z-40 hidden items-center justify-center bg-slate-900/40 backdrop-blur-[1px] p-4">
+      <div class="bg-[#fffdf9] rounded-2xl border border-[#e3dcd0] shadow-xl w-full max-w-xl overflow-hidden">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-[#efe9de]">
+          <h3 class="text-base font-semibold text-slate-900">Import &amp; Export Data</h3>
+          <button id="closeIoModalBtn" type="button" class="text-slate-400 hover:text-slate-700 p-1 rounded-lg cursor-pointer">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <div class="p-6 space-y-6">
+          <div class="space-y-2.5">
+            <h4 class="text-xs font-semibold uppercase tracking-wider text-slate-500">Export Current Ledger</h4>
+            <p class="text-xs text-slate-500">
+              Download all entries, monthly checklist statuses, and alarm schedules as CSV or JSON.
+            </p>
+            <div class="flex flex-wrap gap-2.5 pt-1">
+              <button
+                id="exportCsvBtn"
+                type="button"
+                class="px-3.5 py-2 text-xs sm:text-sm font-medium bg-slate-800 text-[#faf7f2] hover:bg-slate-700 rounded-xl transition cursor-pointer"
+              >
+                Download CSV
+              </button>
+              <button
+                id="exportJsonBtn"
+                type="button"
+                class="px-3.5 py-2 text-xs sm:text-sm font-medium bg-[#f3efe6] text-slate-800 hover:bg-[#eae3d5] border border-[#e3dcd0] rounded-xl transition cursor-pointer"
+              >
+                Download JSON Backup
+              </button>
+            </div>
+          </div>
+
+          <div class="space-y-3 pt-4 border-t border-[#efe9de]">
+            <h4 class="text-xs font-semibold uppercase tracking-wider text-slate-500">Import CSV or JSON</h4>
+            <div class="flex flex-wrap items-center gap-3">
+              <label class="text-xs font-medium text-slate-600">Import Mode:</label>
+              <select
+                id="importModeSelect"
+                class="px-3 py-1.5 text-xs sm:text-sm bg-[#faf7f2] border border-[#e3dcd0] rounded-xl text-slate-800"
+              >
+                <option value="merge">Merge (add new / update matching ID)</option>
+                <option value="replace">Replace current entries</option>
+              </select>
+            </div>
+
+            <div class="pt-1">
+              <input
+                id="importFileInput"
+                type="file"
+                accept=".json,.csv,text/csv,application/json"
+                class="block w-full text-xs text-slate-600 file:mr-3 file:py-2 file:px-3.5 file:rounded-xl file:border-0 file:text-xs file:font-medium file:bg-[#f3efe6] file:text-slate-800 hover:file:bg-[#eae3d5] cursor-pointer"
+              />
+            </div>
+
+            <div id="importPreviewBox" class="hidden bg-[#faf7f2] border border-[#e3dcd0] rounded-xl p-3 space-y-2">
+              <div id="importPreviewText" class="text-xs font-medium text-slate-700"></div>
+              <div class="flex justify-end gap-2">
+                <button
+                  id="cancelImportBtn"
+                  type="button"
+                  class="px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-[#eae3d5] rounded-lg cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  id="confirmImportBtn"
+                  type="button"
+                  class="px-3.5 py-1.5 text-xs font-medium bg-emerald-700 text-white hover:bg-emerald-800 rounded-lg cursor-pointer"
+                >
+                  Apply Import
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Finance Team Members Modal -->
+    <div id="teamModal" class="fixed inset-0 z-40 hidden items-center justify-center bg-slate-900/40 backdrop-blur-[1px] p-4">
+      <div class="bg-[#fffdf9] rounded-2xl border border-[#e3dcd0] shadow-xl w-full max-w-md overflow-hidden">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-[#efe9de]">
+          <h3 class="text-base font-semibold text-slate-900">Finance Team Members</h3>
+          <button id="closeTeamModalBtn" type="button" class="text-slate-400 hover:text-slate-700 p-1 rounded-lg cursor-pointer">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <div class="p-6 space-y-4">
+          <p class="text-xs text-slate-500">
+            Add or manage finance team members to assign entries, filter views, and collaborate across devices.
+          </p>
+
+          <form id="addMemberForm" class="flex gap-2">
+            <input
+              id="newMemberNameInput"
+              type="text"
+              required
+              placeholder="New member name..."
+              class="flex-1 px-3 py-2 text-sm bg-[#faf7f2] border border-[#e3dcd0] rounded-xl text-slate-800 focus:outline-none focus:bg-white focus:border-slate-400"
+            />
+            <button
+              type="submit"
+              class="px-4 py-2 text-sm font-medium bg-slate-800 text-[#faf7f2] hover:bg-slate-700 rounded-xl transition cursor-pointer"
+            >
+              Add
+            </button>
+          </form>
+
+          <ul id="teamMemberList" class="divide-y divide-[#efe9de] border border-[#e3dcd0] rounded-xl overflow-hidden bg-[#faf7f2]/60"></ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Install / App Guide Modal -->
+    <div id="appGuideModal" class="fixed inset-0 z-40 hidden items-center justify-center bg-slate-900/40 backdrop-blur-[1px] p-4">
+      <div class="bg-[#fffdf9] rounded-2xl border border-[#e3dcd0] shadow-xl w-full max-w-xl overflow-hidden">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-[#efe9de]">
+          <h3 class="text-base font-semibold text-slate-900">Install as Mobile or Desktop App</h3>
+          <button id="closeAppGuideBtn" type="button" class="text-slate-400 hover:text-slate-700 p-1 rounded-lg cursor-pointer">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <div class="p-6 space-y-4 text-xs sm:text-sm text-slate-600">
+          <div class="flex items-center justify-between gap-3 bg-[#faf7f2] border border-[#e3dcd0] rounded-xl px-3.5 py-2.5">
+            <div>
+              <div class="text-xs font-semibold text-slate-800">PWA Manifest &amp; Service Worker</div>
+              <div id="pwaEnvStatus" class="text-xs text-slate-500 mt-0.5">Checking browser context...</div>
+            </div>
+            <button
+              id="triggerInstallPromptBtn"
+              type="button"
+              class="hidden px-3 py-1.5 text-xs font-medium bg-slate-800 text-[#faf7f2] hover:bg-slate-700 rounded-xl transition cursor-pointer shrink-0"
+            >
+              Install Now
+            </button>
+          </div>
+
+          <div class="space-y-3 bg-[#faf7f2] border border-[#e3dcd0] rounded-xl p-4">
+            <div>
+              <h4 class="font-semibold text-slate-900">1. Install on Android (Chrome)</h4>
+              <p class="text-xs text-slate-600 mt-0.5">
+                Open this page over <code class="text-slate-800">https://</code> in Chrome, tap the <strong>⋮</strong> menu, and choose <strong>Install app</strong> or <strong>Add to Home screen</strong>.
+              </p>
+            </div>
+            <div>
+              <h4 class="font-semibold text-slate-900">2. Install on iPhone (Safari)</h4>
+              <p class="text-xs text-slate-600 mt-0.5">
+                Open this page over <code class="text-slate-800">https://</code> in Safari, tap <strong>Share</strong>, and select <strong>Add to Home Screen</strong>.
+              </p>
+            </div>
+            <div>
+              <h4 class="font-semibold text-slate-900">3. Native Phone Clock/Calendar Alarms (.ics)</h4>
+              <p class="text-xs text-slate-600 mt-0.5">
+                Use the <strong>.ics</strong> download option inside <strong>Alarms</strong> to export due date reminders with built-in audio alerts directly into your phone's Calendar/Clock app so they ring even when the browser is closed.
+              </p>
+            </div>
+          </div>
+
+          <div class="flex justify-end pt-1">
+            <button
+              id="doneAppGuideBtn"
+              type="button"
+              class="px-4 py-2 text-sm font-medium bg-slate-800 text-[#faf7f2] hover:bg-slate-700 rounded-xl transition cursor-pointer"
+            >
+              Done
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /**
+     * Finance Ledger & Due Date Alarm Engine
+     * Reference date: 24 Nov 2026 (2026-11-24).
+     */
+    const STORAGE_KEY = 'finance_ledger_state_v3';
+    const REF_DATE_STR = '2026-11-24';
+
+    const MONTHS = [
+      { key: 'nov_2026', label: 'Nov 2026', year: 2026, monthIndex: 10 },
+      { key: 'dec_2026', label: 'Dec 2026', year: 2026, monthIndex: 11 },
+      { key: 'jan_2027', label: 'Jan 2027', year: 2027, monthIndex: 0 },
+      { key: 'feb_2027', label: 'Feb 2027', year: 2027, monthIndex: 1 },
+      { key: 'mar_2027', label: 'Mar 2027', year: 2027, monthIndex: 2 },
+      { key: 'apr_2027', label: 'Apr 2027', year: 2027, monthIndex: 3 },
+      { key: 'may_2027', label: 'May 2027', year: 2027, monthIndex: 4 },
+      { key: 'jun_2027', label: 'Jun 2027', year: 2027, monthIndex: 5 }
+    ];
+
+    const DEFAULT_MEMBERS = ['Rohan', 'Ananya', 'Vikram', 'Meera'];
+
+    function emptyMonthsMap() {
+      const map = {};
+      MONTHS.forEach(m => {
+        map[m.key] = '';
+      });
+      return map;
+    }
+
+    /**
+     * All 18 Vedant receivable disbursements:
+     * - Payments due on or before Nov 24, 2026 are pre-marked 'done' ("Received")
+     * - Nov 5, Nov 11, Nov 12, Nov 20 disbursements have 'na' in Nov 2026 ONLY (isolated)
+     * - Nov 25 and Nov 28 due dates are blank ('')
+     * - All future months (Dec 2026 – Jun 2027) start blank ('')
+     */
+    const DEFAULT_ENTRIES = [
+      {
+        id: 'vedant-01',
+        direction: 'receivable',
+        party: 'Vedant',
+        disbursementDate: '2026-08-01',
+        principal: 100000,
+        cycle: 'monthly',
+        rate: 10,
+        interestOverride: 10000,
+        owner: 'Rohan',
+        note: 'Tranche #1 · Monthly 1st',
+        status: 'active',
+        closedDate: '',
+        closeNote: '',
+        alarmEnabled: true,
+        alarmTime: '09:30',
+        alarmOffsetDays: 0,
+        months: { ...emptyMonthsMap(), nov_2026: 'done' }
+      },
+      {
+        id: 'vedant-02',
+        direction: 'receivable',
+        party: 'Vedant',
+        disbursementDate: '2026-08-07',
+        principal: 75000,
+        cycle: 'monthly',
+        rate: 12,
+        interestOverride: 9000,
+        owner: 'Rohan',
+        note: 'Tranche #2 · Monthly 7th',
+        status: 'active',
+        closedDate: '',
+        closeNote: '',
+        alarmEnabled: true,
+        alarmTime: '09:30',
+        alarmOffsetDays: 0,
+        months: { ...emptyMonthsMap(), nov_2026: 'done' }
+      },
+      {
+        id: 'vedant-03',
+        direction: 'receivable',
+        party: 'Vedant',
+        disbursementDate: '2026-08-14',
+        principal: 60000,
+        cycle: '15-day',
+        rate: 15,
+        interestOverride: 9000,
+        owner: 'Ananya',
+        note: 'Tranche #3 · 15-day cycle',
+        status: 'active',
+        closedDate: '',
+        closeNote: '',
+        alarmEnabled: true,
+        alarmTime: '09:30',
+        alarmOffsetDays: 0,
+        months: { ...emptyMonthsMap(), nov_2026: 'done' }
+      },
+      {
+        id: 'vedant-04',
+        direction: 'receivable',
+        party: 'Vedant',
+        disbursementDate: '2026-08-18',
+        principal: 90000,
+        cycle: 'monthly',
+        rate: 10,
+        interestOverride: 9000,
+        owner: 'Vikram',
+        note: 'Tranche #4 · Monthly 18th',
+        status: 'active',
+        closedDate: '',
+        closeNote: '',
+        alarmEnabled: true,
+        alarmTime: '09:30',
+        alarmOffsetDays: 0,
+        months: { ...emptyMonthsMap(), nov_2026: 'done' }
+      },
+      {
+        id: 'vedant-05',
+        direction: 'receivable',
+        party: 'Vedant',
+        disbursementDate: '2026-08-25',
+        principal: 100000,
+        cycle: 'monthly',
+        rate: 10,
+        interestOverride: 10000,
+        owner: 'Vikram',
+        note: 'Tranche #5 · Due Nov 25',
+        status: 'active',
+        closedDate: '',
+        closeNote: '',
+        alarmEnabled: true,
+        alarmTime: '09:30',
+        alarmOffsetDays: 0,
+        months: emptyMonthsMap()
+      },
+      {
+        id: 'vedant-06',
+        direction: 'receivable',
+        party: 'Vedant',
+        disbursementDate: '2026-09-01',
+        principal: 80000,
+        cycle: 'monthly',
+        rate: 10,
+        interestOverride: 8000,
+        owner: 'Rohan',
+        note: 'Tranche #6 · Monthly 1st',
+        status: 'active',
+        closedDate: '',
+        closeNote: '',
+        alarmEnabled: true,
+        alarmTime: '09:30',
+        alarmOffsetDays: 0,
+        months: { ...emptyMonthsMap(), nov_2026: 'done' }
+      },
+      {
+        id: 'vedant-07',
+        direction: 'receivable',
+        party: 'Vedant',
+        disbursementDate: '2026-09-09',
+        principal: 80000,
+        cycle: 'monthly',
+        rate: 10,
+        interestOverride: 8000,
+        owner: 'Ananya',
+        note: 'Tranche #7 · Monthly 9th',
+        status: 'active',
+        closedDate: '',
+        closeNote: '',
+        alarmEnabled: true,
+        alarmTime: '09:30',
+        alarmOffsetDays: 0,
+        months: { ...emptyMonthsMap(), nov_2026: 'done' }
+      },
+      {
+        id: 'vedant-08',
+        direction: 'receivable',
+        party: 'Vedant',
+        disbursementDate: '2026-09-12',
+        principal: 60000,
+        cycle: '15-day',
+        rate: 15,
+        interestOverride: 9000,
+        owner: 'Ananya',
+        note: 'Tranche #8 · 15-day cycle',
+        status: 'active',
+        closedDate: '',
+        closeNote: '',
+        alarmEnabled: true,
+        alarmTime: '09:30',
+        alarmOffsetDays: 0,
+        months: { ...emptyMonthsMap(), nov_2026: 'done' }
+      },
+      {
+        id: 'vedant-09',
+        direction: 'receivable',
+        party: 'Vedant',
+        disbursementDate: '2026-09-20',
+        principal: 60000,
+        cycle: '15-day',
+        rate: 15,
+        interestOverride: 9000,
+        owner: 'Meera',
+        note: 'Tranche #9 · 15-day (Next Dec 04)',
+        status: 'active',
+        closedDate: '',
+        closeNote: '',
+        alarmEnabled: true,
+        alarmTime: '09:30',
+        alarmOffsetDays: 0,
+        months: { ...emptyMonthsMap(), nov_2026: 'done' }
+      },
+      {
+        id: 'vedant-10',
+        direction: 'receivable',
+        party: 'Vedant',
+        disbursementDate: '2026-09-22',
+        principal: 75000,
+        cycle: 'monthly',
+        rate: 12,
+        interestOverride: 9000,
+        owner: 'Vikram',
+        note: 'Tranche #10 · Monthly 22nd',
+        status: 'active',
+        closedDate: '',
+        closeNote: '',
+        alarmEnabled: true,
+        alarmTime: '09:30',
+        alarmOffsetDays: 0,
+        months: { ...emptyMonthsMap(), nov_2026: 'done' }
+      },
+      {
+        id: 'vedant-11',
+        direction: 'receivable',
+        party: 'Vedant',
+        disbursementDate: '2026-09-28',
+        principal: 70000,
+        cycle: 'monthly',
+        rate: 10,
+        interestOverride: 7000,
+        owner: 'Vikram',
+        note: 'Tranche #11 · Due Nov 28',
+        status: 'active',
+        closedDate: '',
+        closeNote: '',
+        alarmEnabled: true,
+        alarmTime: '09:30',
+        alarmOffsetDays: 0,
+        months: emptyMonthsMap()
+      },
+      {
+        id: 'vedant-12',
+        direction: 'receivable',
+        party: 'Vedant',
+        disbursementDate: '2026-10-03',
+        principal: 80000,
+        cycle: 'monthly',
+        rate: 10,
+        interestOverride: 8000,
+        owner: 'Meera',
+        note: 'Tranche #12 · Monthly 3rd',
+        status: 'active',
+        closedDate: '',
+        closeNote: '',
+        alarmEnabled: true,
+        alarmTime: '09:30',
+        alarmOffsetDays: 0,
+        months: { ...emptyMonthsMap(), nov_2026: 'done' }
+      },
+      {
+        id: 'vedant-13',
+        direction: 'receivable',
+        party: 'Vedant',
+        disbursementDate: '2026-10-10',
+        principal: 65000,
+        cycle: 'monthly',
+        rate: 20,
+        interestOverride: 13000,
+        owner: 'Meera',
+        note: 'Tranche #13 · Monthly 10th',
+        status: 'active',
+        closedDate: '',
+        closeNote: '',
+        alarmEnabled: true,
+        alarmTime: '09:30',
+        alarmOffsetDays: 0,
+        months: { ...emptyMonthsMap(), nov_2026: 'done' }
+      },
+      {
+        id: 'vedant-14',
+        direction: 'receivable',
+        party: 'Vedant',
+        disbursementDate: '2026-10-18',
+        principal: 50000,
+        cycle: '15-day',
+        rate: 18,
+        interestOverride: 9000,
+        owner: 'Rohan',
+        note: 'Tranche #14 · 15-day (Next Dec 02)',
+        status: 'active',
+        closedDate: '',
+        closeNote: '',
+        alarmEnabled: true,
+        alarmTime: '09:30',
+        alarmOffsetDays: 0,
+        months: { ...emptyMonthsMap(), nov_2026: 'done' }
+      },
+      {
+        id: 'vedant-15',
+        direction: 'receivable',
+        party: 'Vedant',
+        disbursementDate: '2026-11-05',
+        principal: 80000,
+        cycle: 'monthly',
+        rate: 10,
+        interestOverride: 8000,
+        owner: 'Rohan',
+        note: 'Tranche #15 · Disbursed Nov 5 (Nov NA)',
+        status: 'active',
+        closedDate: '',
+        closeNote: '',
+        alarmEnabled: true,
+        alarmTime: '09:30',
+        alarmOffsetDays: 0,
+        months: { ...emptyMonthsMap(), nov_2026: 'na' }
+      },
+      {
+        id: 'vedant-16',
+        direction: 'receivable',
+        party: 'Vedant',
+        disbursementDate: '2026-11-11',
+        principal: 80000,
+        cycle: 'monthly',
+        rate: 10,
+        interestOverride: 8000,
+        owner: 'Ananya',
+        note: 'Tranche #16 · Disbursed Nov 11 (Nov NA)',
+        status: 'active',
+        closedDate: '',
+        closeNote: '',
+        alarmEnabled: true,
+        alarmTime: '09:30',
+        alarmOffsetDays: 0,
+        months: { ...emptyMonthsMap(), nov_2026: 'na' }
+      },
+      {
+        id: 'vedant-17',
+        direction: 'receivable',
+        party: 'Vedant',
+        disbursementDate: '2026-11-12',
+        principal: 80000,
+        cycle: 'monthly',
+        rate: 10,
+        interestOverride: 8000,
+        owner: 'Vikram',
+        note: 'Tranche #17 · Disbursed Nov 12 (Nov NA)',
+        status: 'active',
+        closedDate: '',
+        closeNote: '',
+        alarmEnabled: true,
+        alarmTime: '09:30',
+        alarmOffsetDays: 0,
+        months: { ...emptyMonthsMap(), nov_2026: 'na' }
+      },
+      {
+        id: 'vedant-18',
+        direction: 'receivable',
+        party: 'Vedant',
+        disbursementDate: '2026-11-20',
+        principal: 80000,
+        cycle: 'monthly',
+        rate: 10,
+        interestOverride: 8000,
+        owner: 'Meera',
+        note: 'Tranche #18 · Disbursed Nov 20 (Nov NA)',
+        status: 'active',
+        closedDate: '',
+        closeNote: '',
+        alarmEnabled: true,
+        alarmTime: '09:30',
+        alarmOffsetDays: 0,
+        months: { ...emptyMonthsMap(), nov_2026: 'na' }
+      },
+      // 2 Sample Payable Entries
+      {
+        id: 'payable-01',
+        direction: 'payable',
+        party: 'Apex Working Capital',
+        disbursementDate: '2026-09-05',
+        principal: 250000,
+        cycle: 'monthly',
+        rate: 11,
+        interestOverride: 27500,
+        owner: 'Meera',
+        note: 'Credit line monthly servicing',
+        status: 'active',
+        closedDate: '',
+        closeNote: '',
+        alarmEnabled: true,
+        alarmTime: '10:00',
+        alarmOffsetDays: 1,
+        months: { ...emptyMonthsMap(), nov_2026: 'done' }
+      },
+      {
+        id: 'payable-02',
+        direction: 'payable',
+        party: 'Harbor Logistics Advance',
+        disbursementDate: '2026-10-15',
+        principal: 120000,
+        cycle: '15-day',
+        rate: 12,
+        interestOverride: 14400,
+        owner: 'Rohan',
+        note: '15-day vendor settlement',
+        status: 'active',
+        closedDate: '',
+        closeNote: '',
+        alarmEnabled: true,
+        alarmTime: '10:30',
+        alarmOffsetDays: 0,
+        months: { ...emptyMonthsMap(), nov_2026: 'done' }
+      }
+    ];
+
+    function parseIsoDate(isoStr) {
+      if (!isoStr || typeof isoStr !== 'string') return null;
+      const parts = isoStr.split('-').map(Number);
+      if (parts.length !== 3 || parts.some(Number.isNaN)) return null;
+      return new Date(Date.UTC(parts[0], parts[1] - 1, parts[2]));
+    }
+
+    function formatIsoDate(dateObj) {
+      const y = dateObj.getUTCFullYear();
+      const m = String(dateObj.getUTCMonth() + 1).padStart(2, '0');
+      const d = String(dateObj.getUTCDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+
+    function addDaysToIso(isoStr, daysDelta) {
+      const dt = parseIsoDate(isoStr);
+      if (!dt) return '';
+      const shifted = new Date(dt.getTime() + daysDelta * 24 * 60 * 60 * 1000);
+      return formatIsoDate(shifted);
+    }
+
+    function formatDisplayDate(isoStr) {
+      const dt = parseIsoDate(isoStr);
+      if (!dt) return '—';
+      const monthsShort = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const day = String(dt.getUTCDate()).padStart(2, '0');
+      return `${day} ${monthsShort[dt.getUTCMonth()]} ${dt.getUTCFullYear()}`;
+    }
+
+    function formatTime12Hour(hhmm) {
+      if (!hhmm || !hhmm.includes(':')) return hhmm || '09:30';
+      const [hStr, mStr] = hhmm.split(':');
+      let h = parseInt(hStr, 10);
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      h = h % 12 || 12;
+      return `${String(h).padStart(2, '0')}:${mStr} ${ampm}`;
+    }
+
+    function addMonthsClamped(dateObj, monthsToAdd) {
+      const targetYear = dateObj.getUTCFullYear();
+      const targetMonth = dateObj.getUTCMonth() + monthsToAdd;
+      const day = dateObj.getUTCDate();
+      const lastDayOfTargetMonth = new Date(Date.UTC(targetYear, targetMonth + 1, 0)).getUTCDate();
+      return new Date(Date.UTC(targetYear, targetMonth, Math.min(day, lastDayOfTargetMonth)));
+    }
+
+    function generateScheduleDates(disbursementDateStr, cycleType) {
+      const start = parseIsoDate(disbursementDateStr);
+      if (!start) return [];
+      const dates = [];
+      for (let step = 1; step <= 40; step++) {
+        const nextDt =
+          cycleType === '15-day'
+            ? new Date(start.getTime() + step * 15 * 24 * 60 * 60 * 1000)
+            : addMonthsClamped(start, step);
+        dates.push(formatIsoDate(nextDt));
+      }
+      return dates;
+    }
+
+    /**
+     * Computes Next Due Date strictly after REF_DATE_STR (2026-11-24).
+     * - Historical 'done' marks up to Nov 24 are already accounted for by filtering > REF_DATE_STR.
+     * - Additional 'done' marks for future months advance the upcoming due date step by step.
+     * - 'na' marks are strictly isolated to that single month and NEVER change Next Due Date.
+     */
+    function computeNextDueDate(entry) {
+      if (!entry || entry.status === 'ended') {
+        return { iso: '', label: 'Ended' };
+      }
+
+      const schedule = generateScheduleDates(entry.disbursementDate, entry.cycle);
+      const futureDates = schedule.filter(d => d > REF_DATE_STR);
+      if (!futureDates.length) {
+        return { iso: '', label: '—' };
+      }
+
+      const monthsMap = entry.months || {};
+      const baselineDoneCount =
+        typeof entry.initialDoneCount === 'number'
+          ? entry.initialDoneCount
+          : monthsMap.nov_2026 === 'done'
+            ? 1
+            : 0;
+
+      const currentDoneCount = MONTHS.reduce(
+        (acc, m) => acc + (monthsMap[m.key] === 'done' ? 1 : 0),
+        0
+      );
+
+      const futureAdvances = Math.max(0, currentDoneCount - baselineDoneCount);
+      const idx = Math.min(futureAdvances, futureDates.length - 1);
+      const chosenIso = futureDates[idx];
+      return { iso: chosenIso, label: formatDisplayDate(chosenIso) };
+    }
+
+    function computeEntryAlarmTrigger(entry) {
+      if (!entry || entry.status === 'ended' || !entry.alarmEnabled) {
+        return null;
+      }
+      const nextDue = computeNextDueDate(entry);
+      if (!nextDue.iso) return null;
+      const offsetDays = Number(entry.alarmOffsetDays) || 0;
+      const triggerDateIso = addDaysToIso(nextDue.iso, -offsetDays);
+      const triggerTime = entry.alarmTime || state.alarmSettings.globalTime || '09:30';
+      return {
+        dateIso: triggerDateIso,
+        time: triggerTime,
+        dueDateIso: nextDue.iso,
+        offsetDays
+      };
+    }
+
+    function getCycleInterest(entry) {
+      if (
+        entry.interestOverride !== null &&
+        entry.interestOverride !== undefined &&
+        entry.interestOverride !== '' &&
+        !Number.isNaN(Number(entry.interestOverride))
+      ) {
+        return Number(entry.interestOverride);
+      }
+      const p = Number(entry.principal) || 0;
+      const r = Number(entry.rate) || 0;
+      return (p * r) / 100;
+    }
+
+    function formatINR(amount) {
+      const num = Number(amount) || 0;
+      return new Intl.NumberFormat('en-IN', {
+        style: 'currency',
+        currency: 'INR',
+        maximumFractionDigits: num % 1 === 0 ? 0 : 2
+      }).format(num);
+    }
+
+    function normalizeEntry(raw, idx = 0) {
+      const months = emptyMonthsMap();
+      if (raw && raw.months && typeof raw.months === 'object') {
+        MONTHS.forEach(m => {
+          const val = raw.months[m.key];
+          if (val === 'done' || val === 'pending' || val === 'na') {
+            months[m.key] = val;
+          } else {
+            months[m.key] = '';
+          }
+        });
+      }
+      const initialDoneCount =
+        raw && typeof raw.initialDoneCount === 'number'
+          ? raw.initialDoneCount
+          : months.nov_2026 === 'done'
+            ? 1
+            : 0;
+
+      return {
+        id: raw && raw.id ? String(raw.id) : `entry-${Date.now()}-${idx}`,
+        direction: raw && raw.direction === 'payable' ? 'payable' : 'receivable',
+        party: raw && raw.party ? String(raw.party).trim() : 'Unnamed Party',
+        disbursementDate: raw && raw.disbursementDate ? String(raw.disbursementDate) : '2026-11-24',
+        principal: Number(raw && raw.principal) || 0,
+        cycle: raw && raw.cycle === '15-day' ? '15-day' : 'monthly',
+        rate: Number(raw && raw.rate) || 0,
+        interestOverride:
+          raw && raw.interestOverride !== null && raw.interestOverride !== undefined && raw.interestOverride !== ''
+            ? Number(raw.interestOverride)
+            : null,
+        owner: raw && raw.owner ? String(raw.owner) : DEFAULT_MEMBERS[0],
+        note: raw && raw.note ? String(raw.note) : '',
+        status: raw && raw.status === 'ended' ? 'ended' : 'active',
+        closedDate: raw && raw.closedDate ? String(raw.closedDate) : '',
+        closeNote: raw && raw.closeNote ? String(raw.closeNote) : '',
+        alarmEnabled: raw && typeof raw.alarmEnabled === 'boolean' ? raw.alarmEnabled : true,
+        alarmTime: raw && raw.alarmTime ? String(raw.alarmTime) : '09:30',
+        alarmOffsetDays: raw && raw.alarmOffsetDays !== undefined ? Number(raw.alarmOffsetDays) : 0,
+        initialDoneCount,
+        months
+      };
+    }
+
+    function loadState() {
+      try {
+        const rawStr = localStorage.getItem(STORAGE_KEY);
+        if (!rawStr) {
+          return {
+            entries: DEFAULT_ENTRIES.map((e, i) => normalizeEntry(e, i)),
+            members: [...DEFAULT_MEMBERS],
+            activeMember: 'All',
+            directionTab: 'receivable',
+            ownerFilter: 'All',
+            fileStatusFilter: 'active',
+            searchQuery: '',
+            alarmSettings: {
+              globalTime: '09:30',
+              tone: 'chime',
+              volume: 80
+            }
+          };
+        }
+        const parsed = JSON.parse(rawStr);
+        const members =
+          Array.isArray(parsed.members) && parsed.members.length
+            ? Array.from(new Set(parsed.members.map(String)))
+            : [...DEFAULT_MEMBERS];
+        const entries =
+          Array.isArray(parsed.entries)
+            ? parsed.entries.map((e, i) => normalizeEntry(e, i))
+            : DEFAULT_ENTRIES.map((e, i) => normalizeEntry(e, i));
+
+        return {
+          entries,
+          members,
+          activeMember: parsed.activeMember || 'All',
+          directionTab: ['receivable', 'payable', 'all'].includes(parsed.directionTab)
+            ? parsed.directionTab
+            : 'receivable',
+          ownerFilter: parsed.ownerFilter || 'All',
+          fileStatusFilter: ['active', 'ended', 'all'].includes(parsed.fileStatusFilter)
+            ? parsed.fileStatusFilter
+            : 'active',
+          searchQuery: '',
+          alarmSettings: {
+            globalTime: (parsed.alarmSettings && parsed.alarmSettings.globalTime) || '09:30',
+            tone: (parsed.alarmSettings && parsed.alarmSettings.tone) || 'chime',
+            volume:
+              parsed.alarmSettings && typeof parsed.alarmSettings.volume === 'number'
+                ? parsed.alarmSettings.volume
+                : 80
+          }
+        };
+      } catch (err) {
+        console.error('Failed to load saved state:', err);
+        return {
+          entries: DEFAULT_ENTRIES.map((e, i) => normalizeEntry(e, i)),
+          members: [...DEFAULT_MEMBERS],
+          activeMember: 'All',
+          directionTab: 'receivable',
+          ownerFilter: 'All',
+          fileStatusFilter: 'active',
+          searchQuery: '',
+          alarmSettings: {
+            globalTime: '09:30',
+            tone: 'chime',
+            volume: 80
+          }
+        };
+      }
+    }
+
+    let state = loadState();
+    let pendingImportData = null;
+    let pendingDeleteId = null;
+    let deferredInstallPrompt = null;
+
+    // Web Audio API Alarm Synthesizer State
+    let audioCtx = null;
+    let alarmRingInterval = null;
+    let activeRingingAlarm = null;
+    const triggeredAlarmKeys = new Set();
+    const snoozedAlarms = [];
+
+    const cloudBridge = {
+      enabled: false,
+      user: null,
+      saveEntry: async () => {},
+      deleteEntry: async () => {},
+      saveMeta: async () => {},
+      replaceAllEntries: async () => {}
+    };
+
+    function updateCloudBadge(statusText, tone = 'neutral') {
+      const labelEl = document.getElementById('cloudSyncLabel');
+      const dotEl = document.getElementById('cloudSyncDot');
+      const badgeEl = document.getElementById('cloudSyncBadge');
+      if (!labelEl || !dotEl || !badgeEl) return;
+
+      labelEl.textContent = statusText;
+      const styles = {
+        live: {
+          badge: 'bg-emerald-50 text-emerald-700 border-emerald-200/80',
+          dot: 'bg-emerald-500'
+        },
+        syncing: {
+          badge: 'bg-amber-50 text-amber-800 border-amber-200/80',
+          dot: 'bg-amber-500'
+        },
+        error: {
+          badge: 'bg-rose-50 text-rose-700 border-rose-200/80',
+          dot: 'bg-rose-500'
+        },
+        neutral: {
+          badge: 'bg-[#f3efe6] text-slate-600 border-[#e3dcd0]',
+          dot: 'bg-slate-400'
+        }
+      };
+      const chosen = styles[tone] || styles.neutral;
+      badgeEl.className = `inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-medium border ${chosen.badge}`;
+      dotEl.className = `w-2 h-2 rounded-full ${chosen.dot}`;
+    }
+
+    function saveState(options = {}) {
+      try {
+        localStorage.setItem(
+          STORAGE_KEY,
+          JSON.stringify({
+            entries: state.entries,
+            members: state.members,
+            activeMember: state.activeMember,
+            directionTab: state.directionTab,
+            ownerFilter: state.ownerFilter,
+            fileStatusFilter: state.fileStatusFilter,
+            alarmSettings: state.alarmSettings
+          })
+        );
+      } catch (err) {
+        console.error('Local storage save error:', err);
+        showToast('Could not save to local browser storage.', 'error');
+      }
+
+      if (cloudBridge.enabled && cloudBridge.user && !options.skipCloud) {
+        if (options.entryToSave) cloudBridge.saveEntry(options.entryToSave);
+        if (options.deletedEntryId) cloudBridge.deleteEntry(options.deletedEntryId);
+        if (options.replaceAll) {
+          cloudBridge.replaceAllEntries(state.entries, state.members, state.alarmSettings);
+        } else if (options.metaChanged || (!options.entryToSave && !options.deletedEntryId)) {
+          cloudBridge.saveMeta({ members: state.members, alarmSettings: state.alarmSettings });
+        }
+      }
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      if (!container) return;
+      const toast = document.createElement('div');
+      const toneMap = {
+        success: 'bg-emerald-900 text-emerald-50 border-emerald-700',
+        error: 'bg-rose-900 text-rose-50 border-rose-700',
+        info: 'bg-slate-800 text-[#faf7f2] border-slate-700'
+      };
+      toast.className = `px-4 py-2.5 rounded-xl border text-xs sm:text-sm font-medium shadow-lg transition-all ${toneMap[type] || toneMap.info}`;
+      toast.textContent = message;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(6px)';
+        setTimeout(() => toast.remove(), 220);
+      }, 3000);
+    }
+
+    // Web Audio API Alarm Synthesizer
+    function playSingleAlarmPattern() {
+      try {
+        const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextCtor) return;
+        if (!audioCtx) {
+          audioCtx = new AudioContextCtor();
+        }
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+
+        const vol = Math.max(0.05, Math.min(1, (Number(state.alarmSettings.volume) || 80) / 100));
+        const tone = state.alarmSettings.tone || 'chime';
+        const now = audioCtx.currentTime;
+
+        const sequences = {
+          chime: [
+            { freq: 587.33, offset: 0, dur: 0.25, type: 'sine' },
+            { freq: 880, offset: 0.22, dur: 0.35, type: 'sine' },
+            { freq: 1174.66, offset: 0.48, dur: 0.5, type: 'sine' }
+          ],
+          bell: [
+            { freq: 1046.5, offset: 0, dur: 0.45, type: 'triangle' },
+            { freq: 1318.5, offset: 0.3, dur: 0.55, type: 'triangle' }
+          ],
+          pulse: [
+            { freq: 980, offset: 0, dur: 0.14, type: 'square' },
+            { freq: 980, offset: 0.22, dur: 0.14, type: 'square' },
+            { freq: 1240, offset: 0.44, dur: 0.22, type: 'square' }
+          ]
+        };
+
+        const notes = sequences[tone] || sequences.chime;
+        notes.forEach(n => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = n.type;
+          osc.frequency.setValueAtTime(n.freq, now + n.offset);
+
+          gain.gain.setValueAtTime(0.0001, now + n.offset);
+          gain.gain.exponentialRampToValueAtTime(vol * 0.35, now + n.offset + 0.03);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + n.offset + n.dur);
+
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+
+          osc.start(now + n.offset);
+          osc.stop(now + n.offset + n.dur + 0.02);
+        });
+      } catch (err) {
+        console.warn('Web Audio playback blocked until user interaction:', err);
+      }
+    }
+
+    function startAlarmRingLoop() {
+      stopAlarmRingLoop();
+      playSingleAlarmPattern();
+      alarmRingInterval = setInterval(playSingleAlarmPattern, 2200);
+    }
+
+    function stopAlarmRingLoop() {
+      if (alarmRingInterval) {
+        clearInterval(alarmRingInterval);
+        alarmRingInterval = null;
+      }
+    }
+
+    function sendBrowserNotification(title, body) {
+      if (!('Notification' in window)) return;
+      if (Notification.permission === 'granted') {
+        try {
+          new Notification(title, { body });
+        } catch (err) {
+          console.warn('Desktop notification failed:', err);
+        }
+      }
+    }
+
+    function triggerRingingAlarmModal(payload) {
+      activeRingingAlarm = payload;
+      const overlay = document.getElementById('ringingAlarmOverlay');
+      document.getElementById('ringingAlarmBadge').textContent =
+        payload.direction === 'payable' ? 'PAYABLE DUE ALARM' : 'RECEIVABLE DUE ALARM';
+      document.getElementById('ringingAlarmParty').textContent = payload.party;
+      document.getElementById('ringingAlarmAmount').textContent = formatINR(payload.amount);
+      document.getElementById('ringingAlarmDetails').textContent = payload.subtitle;
+
+      overlay.classList.remove('hidden');
+      overlay.classList.add('flex');
+      startAlarmRingLoop();
+      sendBrowserNotification(`Payment Due: ${payload.party}`, `${formatINR(payload.amount)} · ${payload.subtitle}`);
+    }
+
+    function closeRingingAlarmModal() {
+      stopAlarmRingLoop();
+      activeRingingAlarm = null;
+      const overlay = document.getElementById('ringingAlarmOverlay');
+      overlay.classList.add('hidden');
+      overlay.classList.remove('flex');
+    }
+
+    function checkScheduledAlarmsEverySecond() {
+      const now = new Date();
+      const hh = String(now.getHours()).padStart(2, '0');
+      const mm = String(now.getMinutes()).padStart(2, '0');
+      const ss = String(now.getSeconds()).padStart(2, '0');
+      const currentTimeStr = `${hh}:${mm}`;
+
+      const clockPill = document.getElementById('liveClockPill');
+      if (clockPill) {
+        clockPill.textContent = `${hh}:${mm}:${ss}`;
+      }
+
+      if (activeRingingAlarm) return;
+
+      const yyyy = now.getFullYear();
+      const mon = String(now.getMonth() + 1).padStart(2, '0');
+      const dd = String(now.getDate()).padStart(2, '0');
+      const systemTodayIso = `${yyyy}-${mon}-${dd}`;
+
+      // 1. Check any snoozed alarms
+      for (let i = snoozedAlarms.length - 1; i >= 0; i--) {
+        if (now.getTime() >= snoozedAlarms[i].triggerAtMs) {
+          const item = snoozedAlarms.splice(i, 1)[0];
+          triggerRingingAlarmModal(item.payload);
+          return;
+        }
+      }
+
+      // 2. Check active entries whose trigger date matches today (system date or ledger reference date) and HH:MM matches now
+      for (const entry of state.entries) {
+        if (entry.status !== 'active' || !entry.alarmEnabled) continue;
+        const trig = computeEntryAlarmTrigger(entry);
+        if (!trig) continue;
+
+        const dateMatches = trig.dateIso === systemTodayIso || trig.dateIso === REF_DATE_STR;
+        if (dateMatches && trig.time === currentTimeStr) {
+          const key = `${entry.id}|${trig.dateIso}|${trig.time}`;
+          if (!triggeredAlarmKeys.has(key)) {
+            triggeredAlarmKeys.add(key);
+            triggerRingingAlarmModal({
+              entryId: entry.id,
+              direction: entry.direction,
+              party: entry.party,
+              amount: getCycleInterest(entry),
+              subtitle: `Due ${formatDisplayDate(trig.dueDateIso)} · Reminder set for ${formatTime12Hour(trig.time)}`
+            });
+            break;
+          }
+        }
+      }
+    }
+
+    // Generate .ics Calendar Alarm file so phone native Clock/Calendar rings even if browser is closed
+    function generateIcsContentForEntries(entriesList) {
+      const lines = [
+        'BEGIN:VCALENDAR',
+        'VERSION:2.0',
+        'PRODID:-//Finance Ledger//Due Date Alarms//EN',
+        'CALSCALE:GREGORIAN',
+        'METHOD:PUBLISH'
+      ];
+
+      entriesList.forEach(entry => {
+        const trig = computeEntryAlarmTrigger(entry);
+        if (!trig) return;
+        const dateDigits = trig.dateIso.replace(/-/g, '');
+        const [hh, mm] = trig.time.split(':');
+        const dtStart = `${dateDigits}T${hh}${mm}00`;
+        const endHour = String((parseInt(hh, 10) + 1) % 24).padStart(2, '0');
+        const dtEnd = `${dateDigits}T${endHour}${mm}00`;
+        const amountStr = formatINR(getCycleInterest(entry));
+        const dirLabel = entry.direction === 'payable' ? 'Payable Due' : 'Receivable Due';
+
+        lines.push(
+          'BEGIN:VEVENT',
+          `UID:${entry.id}-${trig.dueDateIso}@finance-ledger`,
+          `DTSTAMP:20261124T000000Z`,
+          `DTSTART:${dtStart}`,
+          `DTEND:${dtEnd}`,
+          `SUMMARY:${dirLabel}: ${entry.party} (${amountStr})`,
+          `DESCRIPTION:Scheduled ${dirLabel} for ${entry.party}. Principal: ${formatINR(entry.principal)}, Cycle Amount: ${amountStr}, Due Date: ${formatDisplayDate(trig.dueDateIso)}.`,
+          'BEGIN:VALARM',
+          'TRIGGER:-PT0M',
+          'ACTION:DISPLAY',
+          `DESCRIPTION:${dirLabel}: ${entry.party} (${amountStr})`,
+          'END:VALARM',
+          'END:VEVENT'
+        );
+      });
+
+      lines.push('END:VCALENDAR');
+      return lines.join('\r\n');
+    }
+
+    function downloadSingleEntryIcs(entryId) {
+      const entry = state.entries.find(e => e.id === entryId);
+      if (!entry) return;
+      const ics = generateIcsContentForEntries([entry]);
+      downloadFile(`${entry.party.replace(/\s+/g, '_')}_due_alarm.ics`, ics, 'text/calendar;charset=utf-8');
+      showToast(`Downloaded calendar alarm (.ics) for ${entry.party}.`, 'success');
+    }
+
+    function downloadAllAlarmsIcs() {
+      const activeWithAlarms = state.entries.filter(e => e.status === 'active' && e.alarmEnabled);
+      if (!activeWithAlarms.length) {
+        showToast('No active alarms enabled to export.', 'error');
+        return;
+      }
+      const ics = generateIcsContentForEntries(activeWithAlarms);
+      downloadFile('finance_ledger_all_due_alarms.ics', ics, 'text/calendar;charset=utf-8');
+      showToast(`Exported ${activeWithAlarms.length} calendar alarms (.ics).`, 'success');
+    }
+
+    function getFilteredEntries() {
+      const q = (state.searchQuery || '').trim().toLowerCase();
+      return state.entries.filter(entry => {
+        if (state.directionTab !== 'all' && entry.direction !== state.directionTab) {
+          return false;
+        }
+        if (state.ownerFilter && state.ownerFilter !== 'All' && entry.owner !== state.ownerFilter) {
+          return false;
+        }
+        if (state.fileStatusFilter === 'active' && entry.status !== 'active') {
+          return false;
+        }
+        if (state.fileStatusFilter === 'ended' && entry.status !== 'ended') {
+          return false;
+        }
+        if (q) {
+          const hay = `${entry.party} ${entry.note || ''} ${entry.owner || ''} ${entry.cycle || ''}`.toLowerCase();
+          if (!hay.includes(q)) return false;
+        }
+        return true;
+      });
+    }
+
+    function renderMemberSelects() {
+      const activeSelect = document.getElementById('activeMemberSelect');
+      const filterSelect = document.getElementById('ownerFilterSelect');
+      const entryOwnerSelect = document.getElementById('entryOwnerInput');
+
+      const allOption = '<option value="All">All Team</option>';
+      const memberOptions = state.members
+        .map(m => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`)
+        .join('');
+
+      activeSelect.innerHTML = allOption + memberOptions;
+      activeSelect.value = state.members.includes(state.activeMember) ? state.activeMember : 'All';
+
+      filterSelect.innerHTML = '<option value="All">Owner: All Team</option>' + memberOptions;
+      filterSelect.value = state.members.includes(state.ownerFilter) ? state.ownerFilter : 'All';
+
+      entryOwnerSelect.innerHTML = memberOptions;
+      if (!state.members.includes(entryOwnerSelect.value) && state.members.length) {
+        entryOwnerSelect.value = state.members[0];
+      }
+    }
+
+    function renderDirectionTabs() {
+      document.querySelectorAll('.direction-tab').forEach(btn => {
+        const isActive = btn.dataset.direction === state.directionTab;
+        btn.className = `direction-tab px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition cursor-pointer ${
+          isActive
+            ? 'bg-[#fffdf9] text-slate-900 shadow-2xs border border-[#e3dcd0]'
+            : 'text-slate-600 hover:text-slate-900 border border-transparent'
+        }`;
+      });
+
+      const titleMap = {
+        receivable: 'Payments To Be Received',
+        payable: 'Payments To Be Paid',
+        all: 'All Receivables & Payables'
+      };
+      document.getElementById('tableTitle').textContent = titleMap[state.directionTab] || 'Ledger Entries';
+    }
+
+    function renderKPIs() {
+      const activeEntries = state.entries.filter(e => e.status === 'active');
+      const recActive = activeEntries.filter(e => e.direction === 'receivable');
+      const payActive = activeEntries.filter(e => e.direction === 'payable');
+
+      const recPrincipal = recActive.reduce((sum, e) => sum + (Number(e.principal) || 0), 0);
+      const recInterest = recActive.reduce((sum, e) => sum + getCycleInterest(e), 0);
+
+      const payPrincipal = payActive.reduce((sum, e) => sum + (Number(e.principal) || 0), 0);
+      const payInterest = payActive.reduce((sum, e) => sum + getCycleInterest(e), 0);
+
+      let totalReceivedAmount = 0;
+      let totalReceivedSlots = 0;
+      state.entries.forEach(e => {
+        if (e.direction !== 'receivable' || !e.months) return;
+        MONTHS.forEach(m => {
+          if (e.months[m.key] === 'done') {
+            totalReceivedAmount += getCycleInterest(e);
+            totalReceivedSlots += 1;
+          }
+        });
+      });
+
+      const activeAlarms = activeEntries
+        .map(e => ({ entry: e, trig: computeEntryAlarmTrigger(e) }))
+        .filter(item => item.trig !== null)
+        .sort((a, b) => `${a.trig.dateIso} ${a.trig.time}`.localeCompare(`${b.trig.dateIso} ${b.trig.time}`));
+
+      document.getElementById('kpiReceivablePrincipal').textContent = formatINR(recPrincipal);
+      document.getElementById('kpiReceivableCount').textContent = `${recActive.length} active receivable files`;
+
+      document.getElementById('kpiReceivableInterest').textContent = formatINR(recInterest);
+
+      document.getElementById('kpiTotalReceived').textContent = formatINR(totalReceivedAmount);
+      document.getElementById('kpiTotalReceivedCount').textContent = `${totalReceivedSlots} monthly slots marked Received`;
+
+      document.getElementById('kpiPayablePrincipal').textContent = formatINR(payPrincipal);
+      document.getElementById('kpiPayableInterest').textContent = `${formatINR(payInterest)} payout per cycle (${payActive.length} active)`;
+
+      document.getElementById('kpiActiveAlarms').textContent = String(activeAlarms.length);
+      document.getElementById('headerAlarmCountBadge').textContent = String(activeAlarms.length);
+
+      if (activeAlarms.length) {
+        const next = activeAlarms[0];
+        document.getElementById('kpiNextAlarmSummary').textContent =
+          `Next: ${formatDisplayDate(next.trig.dateIso)} at ${formatTime12Hour(next.trig.time)}`;
+      } else {
+        document.getElementById('kpiNextAlarmSummary').textContent = 'No upcoming alarm scheduled';
+      }
+
+      document.getElementById('quickGlobalAlarmTime').value = state.alarmSettings.globalTime || '09:30';
+    }
+
+    function monthSelectClasses(val) {
+      const base = 'month-status-select w-full px-2 py-1.5 rounded-lg text-xs font-medium border focus:outline-none cursor-pointer transition';
+      if (val === 'done') {
+        return `${base} bg-emerald-50 text-emerald-800 border-emerald-200/90`;
+      }
+      if (val === 'pending') {
+        return `${base} bg-amber-50 text-amber-800 border-amber-200/90`;
+      }
+      if (val === 'na') {
+        return `${base} bg-slate-100 text-slate-600 border-slate-200/90`;
+      }
+      return `${base} bg-[#faf7f2] text-slate-500 border-[#e3dcd0] hover:bg-white`;
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById('ledgerTableBody');
+      const emptyState = document.getElementById('emptyState');
+      const badge = document.getElementById('tableCountBadge');
+      const filtered = getFilteredEntries();
+
+      badge.textContent = `${filtered.length} ${filtered.length === 1 ? 'entry' : 'entries'}`;
+
+      if (!filtered.length) {
+        tbody.innerHTML = '';
+        emptyState.classList.remove('hidden');
+        return;
+      }
+      emptyState.classList.add('hidden');
+
+      tbody.innerHTML = filtered
+        .map((entry, index) => {
+          const cycleInterest = getCycleInterest(entry);
+          const nextDue = computeNextDueDate(entry);
+          const trig = computeEntryAlarmTrigger(entry);
+          const isEnded = entry.status === 'ended';
+
+          const directionPill =
+            entry.direction === 'receivable'
+              ? '<span class="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/70">REC</span>'
+              : '<span class="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-amber-50 text-amber-800 border border-amber-200/70">PAY</span>';
+
+          const closedBadge = isEnded
+            ? `<span class="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-rose-50 text-rose-700 border border-rose-200/70">Ended${entry.closedDate ? ` · ${formatDisplayDate(entry.closedDate)}` : ''}</span>`
+            : '';
+
+          const alarmCellHtml = isEnded
+            ? '<span class="text-xs text-slate-400">Off (Ended)</span>'
+            : `<button
+                type="button"
+                data-action="toggle-alarm"
+                data-id="${escapeHtml(entry.id)}"
+                class="row-action inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border transition cursor-pointer ${
+                  entry.alarmEnabled && trig
+                    ? 'bg-amber-50 text-amber-900 border-amber-200/90 hover:bg-amber-100'
+                    : 'bg-[#faf7f2] text-slate-400 border-[#e3dcd0] hover:text-slate-700'
+                }"
+                title="Click to toggle Due Date Alarm ON/OFF"
+              >
+                <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+                <span class="tabular-nums">${
+                  entry.alarmEnabled && trig
+                    ? `${formatDisplayDate(trig.dateIso).slice(0, 6)} · ${formatTime12Hour(trig.time)}`
+                    : 'Off'
+                }</span>
+              </button>`;
+
+          const monthCellsHtml = MONTHS.map(m => {
+            const val = (entry.months && entry.months[m.key]) || '';
+            return `
+              <td class="py-2 px-2 text-center bg-[#faf7f2]/40">
+                <select
+                  aria-label="${escapeHtml(entry.party)} ${m.label} status"
+                  data-entry-id="${escapeHtml(entry.id)}"
+                  data-month-key="${m.key}"
+                  class="${monthSelectClasses(val)}"
+                >
+                  <option value="" ${val === '' ? 'selected' : ''}></option>
+                  <option value="pending" ${val === 'pending' ? 'selected' : ''}>Pending</option>
+                  <option value="done" ${val === 'done' ? 'selected' : ''}>Received</option>
+                  <option value="na" ${val === 'na' ? 'selected' : ''}>NA</option>
+                </select>
+              </td>
+            `;
+          }).join('');
+
+          const fileActionBtn = isEnded
+            ? `<button type="button" data-action="reopen" data-id="${escapeHtml(entry.id)}" class="row-action px-2 py-1 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200/70 transition cursor-pointer">Reopen</button>`
+            : `<button type="button" data-action="end" data-id="${escapeHtml(entry.id)}" class="row-action px-2 py-1 rounded-lg text-xs font-medium bg-[#f3efe6] text-slate-700 hover:bg-[#eae3d5] border border-[#e3dcd0] transition cursor-pointer">End</button>`;
+
+          return `
+            <tr class="${isEnded ? 'opacity-70 bg-[#faf7f2]/50' : 'hover:bg-[#faf7f2]/80'} transition">
+              <td class="py-2.5 px-3 text-center text-xs text-slate-400 tabular-nums">${index + 1}</td>
+              <td class="py-2.5 px-3">
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  ${directionPill}
+                  <span class="font-semibold text-slate-900">${escapeHtml(entry.party)}</span>
+                  ${closedBadge}
+                </div>
+                ${
+                  entry.note || entry.closeNote
+                    ? `<div class="text-[11px] text-slate-400 truncate max-w-[205px] mt-0.5">${escapeHtml(entry.closeNote || entry.note)}</div>`
+                    : ''
+                }
+              </td>
+              <td class="py-2.5 px-3 text-slate-600 tabular-nums whitespace-nowrap">${formatDisplayDate(entry.disbursementDate)}</td>
+              <td class="py-2.5 px-3 text-right font-medium text-slate-900 tabular-nums whitespace-nowrap">${formatINR(entry.principal)}</td>
+              <td class="py-2.5 px-3 text-slate-600 whitespace-nowrap">${entry.cycle === '15-day' ? '15-Day' : 'Monthly'}</td>
+              <td class="py-2.5 px-3 text-right text-slate-600 tabular-nums whitespace-nowrap">${Number(entry.rate) || 0}%</td>
+              <td class="py-2.5 px-3 text-right font-semibold text-slate-900 tabular-nums whitespace-nowrap">${formatINR(cycleInterest)}</td>
+              <td class="py-2.5 px-3 whitespace-nowrap">
+                <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium tabular-nums ${
+                  isEnded
+                    ? 'bg-slate-100 text-slate-500'
+                    : 'bg-slate-800 text-[#faf7f2]'
+                }">${nextDue.label}</span>
+              </td>
+              <td class="py-2.5 px-3 whitespace-nowrap">${alarmCellHtml}</td>
+              <td class="py-2.5 px-3 text-slate-600 whitespace-nowrap">${escapeHtml(entry.owner || '—')}</td>
+              ${monthCellsHtml}
+              <td class="py-2.5 px-3 text-right whitespace-nowrap">
+                <div class="inline-flex items-center justify-end gap-1.5">
+                  <button type="button" data-action="edit" data-id="${escapeHtml(entry.id)}" class="row-action px-2 py-1 rounded-lg text-xs font-medium text-slate-700 hover:bg-[#f3efe6] border border-[#e3dcd0] transition cursor-pointer">Edit</button>
+                  <button type="button" data-action="ics" data-id="${escapeHtml(entry.id)}" class="row-action px-2 py-1 rounded-lg text-xs font-medium text-amber-800 hover:bg-amber-50 border border-amber-200/80 transition cursor-pointer" title="Download Calendar Alarm (.ics)">.ics</button>
+                  ${fileActionBtn}
+                  <button type="button" data-action="delete" data-id="${escapeHtml(entry.id)}" class="row-action px-2 py-1 rounded-lg text-xs font-medium text-rose-700 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition cursor-pointer">Del</button>
+                </div>
+              </td>
+            </tr>
+          `;
+        })
+        .join('');
+    }
+
+    function renderAlarmsModalContent() {
+      document.getElementById('modalGlobalTimeInput').value = state.alarmSettings.globalTime || '09:30';
+      document.getElementById('alarmToneSelect').value = state.alarmSettings.tone || 'chime';
+      document.getElementById('alarmVolumeInput').value = String(state.alarmSettings.volume || 80);
+      document.getElementById('alarmVolumeLabel').textContent = `${state.alarmSettings.volume || 80}%`;
+
+      const activeEntries = state.entries.filter(e => e.status === 'active');
+      const enabledCount = activeEntries.filter(e => e.alarmEnabled).length;
+      document.getElementById('modalAlarmListCount').textContent = `${enabledCount} of ${activeEntries.length} active entries armed`;
+
+      const listEl = document.getElementById('alarmsScheduleList');
+      if (!activeEntries.length) {
+        listEl.innerHTML = '<div class="p-6 text-center text-xs text-slate-400">No active entries found.</div>';
+        return;
+      }
+
+      listEl.innerHTML = activeEntries
+        .map(entry => {
+          const nextDue = computeNextDueDate(entry);
+          const trig = computeEntryAlarmTrigger(entry);
+          const dirBadge =
+            entry.direction === 'payable'
+              ? '<span class="px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-amber-50 text-amber-800 border border-amber-200/80">PAY</span>'
+              : '<span class="px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/80">REC</span>';
+
+          return `
+            <div class="p-3.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 hover:bg-[#faf7f2]/70 transition">
+              <div class="space-y-0.5">
+                <div class="flex items-center gap-2">
+                  ${dirBadge}
+                  <span class="text-sm font-semibold text-slate-900">${escapeHtml(entry.party)}</span>
+                  <span class="text-xs font-medium text-slate-600 tabular-nums">${formatINR(getCycleInterest(entry))}</span>
+                </div>
+                <div class="text-xs text-slate-500">
+                  Next Due: <strong class="text-slate-700">${nextDue.label}</strong>
+                  ${
+                    entry.alarmEnabled && trig
+                      ? ` · Rings <strong class="text-amber-800">${formatDisplayDate(trig.dateIso)} at ${formatTime12Hour(trig.time)}</strong>`
+                      : ' · Alarm paused'
+                  }
+                </div>
+              </div>
+
+              <div class="flex flex-wrap items-center gap-2">
+                <input
+                  type="time"
+                  data-alarm-time-id="${escapeHtml(entry.id)}"
+                  value="${escapeHtml(entry.alarmTime || state.alarmSettings.globalTime || '09:30')}"
+                  class="alarm-row-time px-2.5 py-1 text-xs bg-[#faf7f2] border border-[#e3dcd0] rounded-lg text-slate-800 tabular-nums"
+                />
+                <select
+                  data-alarm-offset-id="${escapeHtml(entry.id)}"
+                  class="alarm-row-offset px-2 py-1 text-xs bg-[#faf7f2] border border-[#e3dcd0] rounded-lg text-slate-700"
+                >
+                  <option value="0" ${Number(entry.alarmOffsetDays) === 0 ? 'selected' : ''}>On Due Date</option>
+                  <option value="1" ${Number(entry.alarmOffsetDays) === 1 ? 'selected' : ''}>1 Day Before</option>
+                  <option value="2" ${Number(entry.alarmOffsetDays) === 2 ? 'selected' : ''}>2 Days Before</option>
+                  <option value="3" ${Number(entry.alarmOffsetDays) === 3 ? 'selected' : ''}>3 Days Before</option>
+                </select>
+                <button
+                  type="button"
+                  data-alarm-toggle-id="${escapeHtml(entry.id)}"
+                  class="alarm-row-toggle px-2.5 py-1 rounded-lg text-xs font-medium border cursor-pointer transition ${
+                    entry.alarmEnabled
+                      ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                      : 'bg-slate-100 text-slate-500 border-slate-200'
+                  }"
+                >
+                  ${entry.alarmEnabled ? 'ON' : 'OFF'}
+                </button>
+              </div>
+            </div>
+          `;
+        })
+        .join('');
+    }
+
+    function renderAll() {
+      renderMemberSelects();
+      renderDirectionTabs();
+      renderKPIs();
+      renderTable();
+      if (!document.getElementById('alarmsModal').classList.contains('hidden')) {
+        renderAlarmsModalContent();
+      }
+    }
+
+    function escapeHtml(str) {
+      return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    // Modal helpers
+    const entryModal = document.getElementById('entryModal');
+    function openAddModal() {
+      document.getElementById('entryModalTitle').textContent = 'Add Payment Entry';
+      document.getElementById('entryIdInput').value = '';
+      document.getElementById('entryDirectionInput').value =
+        state.directionTab === 'payable' ? 'payable' : 'receivable';
+      document.getElementById('entryPartyInput').value = '';
+      document.getElementById('entryDateInput').value = REF_DATE_STR;
+      document.getElementById('entryPrincipalInput').value = '';
+      document.getElementById('entryCycleInput').value = 'monthly';
+      document.getElementById('entryRateInput').value = '10';
+      document.getElementById('entryInterestOverrideInput').value = '';
+      document.getElementById('entryOwnerInput').value =
+        state.activeMember !== 'All' && state.members.includes(state.activeMember)
+          ? state.activeMember
+          : state.members[0] || 'Rohan';
+      document.getElementById('entryNoteInput').value = '';
+      document.getElementById('entryAlarmEnabledInput').checked = true;
+      document.getElementById('entryAlarmTimeInput').value = state.alarmSettings.globalTime || '09:30';
+      document.getElementById('entryAlarmOffsetInput').value = '0';
+
+      entryModal.classList.remove('hidden');
+      entryModal.classList.add('flex');
+    }
+
+    function openEditModal(id) {
+      const entry = state.entries.find(item => item.id === id);
+      if (!entry) return;
+      document.getElementById('entryModalTitle').textContent = `Edit Entry · ${entry.party}`;
+      document.getElementById('entryIdInput').value = entry.id;
+      document.getElementById('entryDirectionInput').value = entry.direction;
+      document.getElementById('entryPartyInput').value = entry.party;
+      document.getElementById('entryDateInput').value = entry.disbursementDate;
+      document.getElementById('entryPrincipalInput').value = entry.principal;
+      document.getElementById('entryCycleInput').value = entry.cycle;
+      document.getElementById('entryRateInput').value = entry.rate;
+      document.getElementById('entryInterestOverrideInput').value =
+        entry.interestOverride !== null && entry.interestOverride !== undefined ? entry.interestOverride : '';
+      document.getElementById('entryOwnerInput').value = entry.owner || state.members[0] || 'Rohan';
+      document.getElementById('entryNoteInput').value = entry.note || '';
+      document.getElementById('entryAlarmEnabledInput').checked = Boolean(entry.alarmEnabled);
+      document.getElementById('entryAlarmTimeInput').value = entry.alarmTime || state.alarmSettings.globalTime || '09:30';
+      document.getElementById('entryAlarmOffsetInput').value = String(entry.alarmOffsetDays || 0);
+
+      entryModal.classList.remove('hidden');
+      entryModal.classList.add('flex');
+    }
+
+    function closeEntryModal() {
+      entryModal.classList.add('hidden');
+      entryModal.classList.remove('flex');
+    }
+
+    const endFileModal = document.getElementById('endFileModal');
+    function openEndFileModal(id) {
+      const entry = state.entries.find(item => item.id === id);
+      if (!entry) return;
+      document.getElementById('endFileEntryId').value = entry.id;
+      document.getElementById('endFileSummary').textContent =
+        `${entry.party} · Principal ${formatINR(entry.principal)} · ${formatINR(getCycleInterest(entry))}/cycle`;
+      document.getElementById('endFileDateInput').value = REF_DATE_STR;
+      document.getElementById('endFileNoteInput').value = '';
+      endFileModal.classList.remove('hidden');
+      endFileModal.classList.add('flex');
+    }
+
+    function closeEndFileModal() {
+      endFileModal.classList.add('hidden');
+      endFileModal.classList.remove('flex');
+    }
+
+    const deleteConfirmModal = document.getElementById('deleteConfirmModal');
+    function openDeleteConfirmModal(id) {
+      const entry = state.entries.find(item => item.id === id);
+      if (!entry) return;
+      pendingDeleteId = id;
+      document.getElementById('deleteConfirmText').textContent =
+        `Remove "${entry.party}" (${formatINR(entry.principal)}) from your ledger?`;
+      deleteConfirmModal.classList.remove('hidden');
+      deleteConfirmModal.classList.add('flex');
+    }
+
+    function closeDeleteConfirmModal() {
+      pendingDeleteId = null;
+      deleteConfirmModal.classList.add('hidden');
+      deleteConfirmModal.classList.remove('flex');
+    }
+
+    // Export & Import helpers
+    function downloadFile(filename, content, mimeType) {
+      const blob = new Blob([content], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    function exportToJson() {
+      const payload = {
+        exportedAt: new Date().toISOString(),
+        referenceDate: REF_DATE_STR,
+        members: state.members,
+        alarmSettings: state.alarmSettings,
+        entries: state.entries
+      };
+      downloadFile('finance_ledger_backup.json', JSON.stringify(payload, null, 2), 'application/json');
+      showToast('Exported JSON backup.', 'success');
+    }
+
+    function csvEscape(val) {
+      const s = String(val ?? '');
+      if (s.includes(',') || s.includes('"') || s.includes('\n')) {
+        return `"${s.replace(/"/g, '""')}"`;
+      }
+      return s;
+    }
+
+    function exportToCsv() {
+      const headers = [
+        'id',
+        'direction',
+        'party',
+        'disbursementDate',
+        'principal',
+        'cycle',
+        'rate',
+        'interestPerCycle',
+        'nextDueDate',
+        'alarmEnabled',
+        'alarmTime',
+        'alarmOffsetDays',
+        'owner',
+        'status',
+        'closedDate',
+        'note',
+        ...MONTHS.map(m => m.key)
+      ];
+      const rows = state.entries.map(e => {
+        const nextDue = computeNextDueDate(e);
+        return [
+          e.id,
+          e.direction,
+          e.party,
+          e.disbursementDate,
+          e.principal,
+          e.cycle,
+          e.rate,
+          getCycleInterest(e),
+          nextDue.iso || nextDue.label,
+          e.alarmEnabled ? 'true' : 'false',
+          e.alarmTime || '09:30',
+          e.alarmOffsetDays || 0,
+          e.owner,
+          e.status,
+          e.closedDate,
+          e.closeNote || e.note,
+          ...MONTHS.map(m => (e.months && e.months[m.key]) || '')
+        ]
+          .map(csvEscape)
+          .join(',');
+      });
+      downloadFile('finance_ledger.csv', [headers.join(','), ...rows].join('\n'), 'text/csv;charset=utf-8;');
+      showToast('Exported CSV file.', 'success');
+    }
+
+    function parseCsvLine(line) {
+      const result = [];
+      let current = '';
+      let inQuotes = false;
+      for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (inQuotes) {
+          if (ch === '"' && line[i + 1] === '"') {
+            current += '"';
+            i++;
+          } else if (ch === '"') {
+            inQuotes = false;
+          } else {
+            current += ch;
+          }
+        } else if (ch === '"') {
+          inQuotes = true;
+        } else if (ch === ',') {
+          result.push(current);
+          current = '';
+        } else {
+          current += ch;
+        }
+      }
+      result.push(current);
+      return result;
+    }
+
+    function parseImportedContent(text, fileName) {
+      const trimmed = text.trim();
+      if (!trimmed) throw new Error('File is empty.');
+
+      if (fileName.toLowerCase().endsWith('.json') || trimmed.startsWith('{') || trimmed.startsWith('[')) {
+        const json = JSON.parse(trimmed);
+        const rawEntries = Array.isArray(json) ? json : Array.isArray(json.entries) ? json.entries : [];
+        const rawMembers = !Array.isArray(json) && Array.isArray(json.members) ? json.members : [];
+        return {
+          entries: rawEntries.map((item, i) => normalizeEntry(item, i)),
+          members: rawMembers.map(String)
+        };
+      }
+
+      const lines = trimmed.split(/\r?\n/).filter(l => l.trim().length > 0);
+      if (lines.length < 2) throw new Error('CSV must include a header row and at least one data row.');
+      const headers = parseCsvLine(lines[0]).map(h => h.trim());
+      const parsedEntries = [];
+      const detectedMembers = new Set();
+
+      for (let i = 1; i < lines.length; i++) {
+        const cols = parseCsvLine(lines[i]);
+        const row = {};
+        headers.forEach((h, idx) => {
+          row[h] = cols[idx] !== undefined ? cols[idx].trim() : '';
+        });
+        const months = emptyMonthsMap();
+        MONTHS.forEach(m => {
+          if (row[m.key] === 'done' || row[m.key] === 'pending' || row[m.key] === 'na') {
+            months[m.key] = row[m.key];
+          }
+        });
+        const entry = normalizeEntry(
+          {
+            id: row.id || `imp-${Date.now()}-${i}`,
+            direction: row.direction === 'payable' ? 'payable' : 'receivable',
+            party: row.party || `Imported Entry ${i}`,
+            disbursementDate: row.disbursementDate || '2026-11-24',
+            principal: Number(row.principal) || 0,
+            cycle: row.cycle === '15-day' ? '15-day' : 'monthly',
+            rate: Number(row.rate) || 0,
+            interestOverride: row.interestPerCycle ? Number(row.interestPerCycle) : null,
+            alarmEnabled: row.alarmEnabled !== 'false',
+            alarmTime: row.alarmTime || '09:30',
+            alarmOffsetDays: Number(row.alarmOffsetDays) || 0,
+            owner: row.owner || DEFAULT_MEMBERS[0],
+            note: row.note || '',
+            status: row.status === 'ended' ? 'ended' : 'active',
+            closedDate: row.closedDate || '',
+            months
+          },
+          i
+        );
+        if (entry.owner) detectedMembers.add(entry.owner);
+        parsedEntries.push(entry);
+      }
+
+      return {
+        entries: parsedEntries,
+        members: Array.from(detectedMembers)
+      };
+    }
+
+    function renderTeamModalList() {
+      const ul = document.getElementById('teamMemberList');
+      ul.innerHTML = state.members
+        .map(m => {
+          const count = state.entries.filter(e => e.owner === m).length;
+          return `
+            <li class="flex items-center justify-between px-4 py-2.5 text-sm">
+              <div>
+                <span class="font-medium text-slate-800">${escapeHtml(m)}</span>
+                <span class="text-xs text-slate-400 ml-2">${count} ${count === 1 ? 'entry' : 'entries'}</span>
+              </div>
+              <button
+                type="button"
+                data-remove-member="${escapeHtml(m)}"
+                class="remove-member-btn text-xs font-medium text-rose-700 hover:underline cursor-pointer"
+              >
+                Remove
+              </button>
+            </li>
+          `;
+        })
+        .join('');
+    }
+
+    function setupPwaManifestAndWorker() {
+      const envStatusEl = document.getElementById('pwaEnvStatus');
+      const installBtn = document.getElementById('triggerInstallPromptBtn');
+      const isSecure = window.isSecureContext || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+
+      if (envStatusEl) {
+        envStatusEl.textContent = isSecure
+          ? `Secure context (${location.protocol}//${location.host || 'local'}) — ready for app install.`
+          : `Opened via ${location.protocol || 'file:'} — host on HTTPS for mobile install prompts.`;
+      }
+
+      try {
+        const iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192"><rect width="192" height="192" rx="40" fill="#1e293b"/><text x="96" y="122" font-family="Inter, sans-serif" font-size="96" font-weight="600" fill="#faf7f2" text-anchor="middle">₹</text></svg>`;
+        const iconUrl = `data:image/svg+xml;base64,${btoa(iconSvg)}`;
+        const manifest = {
+          name: 'Finance Ledger',
+          short_name: 'Finance Ledger',
+          start_url: './',
+          display: 'standalone',
+          background_color: '#faf7f2',
+          theme_color: '#1e293b',
+          icons: [
+            { src: iconUrl, sizes: '192x192', type: 'image/svg+xml' },
+            { src: iconUrl, sizes: '512x512', type: 'image/svg+xml' }
+          ]
+        };
+        const manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
+        const manifestLink = document.createElement('link');
+        manifestLink.rel = 'manifest';
+        manifestLink.href = URL.createObjectURL(manifestBlob);
+        document.head.appendChild(manifestLink);
+
+        if ('serviceWorker' in navigator && isSecure && location.protocol.startsWith('http')) {
+          const swCode = `
+            self.addEventListener('install', event => event.waitUntil(self.skipWaiting()));
+            self.addEventListener('activate', event => event.waitUntil(self.clients.claim()));
+            self.addEventListener('fetch', event => {
+              if (event.request.method !== 'GET') return;
+              event.respondWith(fetch(event.request).catch(() => caches.match(event.request)));
+            });
+          `;
+          const swBlob = new Blob([swCode], { type: 'application/javascript' });
+          navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(() => {});
+        }
+      } catch (err) {
+        console.warn('PWA setup skipped:', err);
+      }
+
+      window.addEventListener('beforeinstallprompt', e => {
+        e.preventDefault();
+        deferredInstallPrompt = e;
+        if (installBtn) {
+          installBtn.classList.remove('hidden');
+        }
+      });
+
+      if (installBtn) {
+        installBtn.addEventListener('click', async () => {
+          if (!deferredInstallPrompt) return;
+          deferredInstallPrompt.prompt();
+          await deferredInstallPrompt.userChoice;
+          deferredInstallPrompt = null;
+          installBtn.classList.add('hidden');
+        });
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderAll();
+      setupPwaManifestAndWorker();
+      checkScheduledAlarmsEverySecond();
+      setInterval(checkScheduledAlarmsEverySecond, 1000);
+
+      // Direction tab switching
+      document.querySelectorAll('.direction-tab').forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.directionTab = btn.dataset.direction;
+          saveState({ metaChanged: true });
+          renderDirectionTabs();
+          renderTable();
+        });
+      });
+
+      // Active finance member switcher
+      document.getElementById('activeMemberSelect').addEventListener('change', e => {
+        state.activeMember = e.target.value;
+        state.ownerFilter = e.target.value;
+        saveState({ metaChanged: true });
+        renderAll();
+      });
+
+      // Owner filter dropdown
+      document.getElementById('ownerFilterSelect').addEventListener('change', e => {
+        state.ownerFilter = e.target.value;
+        saveState({ metaChanged: true });
+        renderTable();
+      });
+
+      // File status filter
+      document.getElementById('fileStatusFilterSelect').addEventListener('change', e => {
+        state.fileStatusFilter = e.target.value;
+        saveState({ metaChanged: true });
+        renderTable();
+      });
+
+      // Search input
+      document.getElementById('searchInput').addEventListener('input', e => {
+        state.searchQuery = e.target.value;
+        renderTable();
+      });
+
+      // Quick Global Alarm Time input
+      document.getElementById('quickGlobalAlarmTime').addEventListener('change', e => {
+        const newTime = e.target.value || '09:30';
+        state.alarmSettings.globalTime = newTime;
+        saveState({ metaChanged: true });
+        renderKPIs();
+        showToast(`Default alarm time updated to ${formatTime12Hour(newTime)}.`, 'info');
+      });
+
+      // Quick Test Alarm button
+      document.getElementById('quickTestAlarmBtn').addEventListener('click', () => {
+        triggerRingingAlarmModal({
+          entryId: null,
+          direction: 'receivable',
+          party: 'Test Payment Reminder · Vedant',
+          amount: 10000,
+          subtitle: `Previewing ${state.alarmSettings.tone || 'chime'} alarm tone`
+        });
+      });
+
+      // Reset default data button
+      document.getElementById('resetSampleBtn').addEventListener('click', () => {
+        state.entries = DEFAULT_ENTRIES.map((e, i) => normalizeEntry(e, i));
+        state.members = [...DEFAULT_MEMBERS];
+        state.activeMember = 'All';
+        state.ownerFilter = 'All';
+        state.fileStatusFilter = 'active';
+        saveState({ replaceAll: true });
+        renderAll();
+        showToast('Restored all 18 Vedant receivables and 2 payables.', 'info');
+      });
+
+      // Monthly checklist change handler
+      document.getElementById('ledgerTableBody').addEventListener('change', e => {
+        const select = e.target.closest('.month-status-select');
+        if (!select) return;
+        const entryId = select.dataset.entryId;
+        const monthKey = select.dataset.monthKey;
+        const newVal = select.value;
+
+        const entry = state.entries.find(item => item.id === entryId);
+        if (!entry) return;
+        if (!entry.months) entry.months = emptyMonthsMap();
+        entry.months[monthKey] = newVal;
+
+        saveState({ entryToSave: entry });
+        renderKPIs();
+        renderTable();
+      });
+
+      // Table Row Actions
+      document.getElementById('ledgerTableBody').addEventListener('click', e => {
+        const btn = e.target.closest('.row-action');
+        if (!btn) return;
+        const action = btn.dataset.action;
+        const id = btn.dataset.id;
+
+        if (action === 'toggle-alarm') {
+          const entry = state.entries.find(item => item.id === id);
+          if (entry) {
+            entry.alarmEnabled = !entry.alarmEnabled;
+            saveState({ entryToSave: entry });
+            renderAll();
+            showToast(
+              entry.alarmEnabled
+                ? `Alarm enabled for ${entry.party} at ${formatTime12Hour(entry.alarmTime)}.`
+                : `Alarm paused for ${entry.party}.`,
+              'info'
+            );
+          }
+        } else if (action === 'ics') {
+          downloadSingleEntryIcs(id);
+        } else if (action === 'edit') {
+          openEditModal(id);
+        } else if (action === 'end') {
+          openEndFileModal(id);
+        } else if (action === 'reopen') {
+          const entry = state.entries.find(item => item.id === id);
+          if (entry) {
+            entry.status = 'active';
+            entry.closedDate = '';
+            entry.closeNote = '';
+            saveState({ entryToSave: entry });
+            renderAll();
+            showToast(`Reopened file for ${entry.party}.`, 'info');
+          }
+        } else if (action === 'delete') {
+          openDeleteConfirmModal(id);
+        }
+      });
+
+      // Delete Confirmation Modal Listeners
+      document.getElementById('cancelDeleteBtn').addEventListener('click', closeDeleteConfirmModal);
+      document.getElementById('confirmDeleteBtn').addEventListener('click', () => {
+        if (!pendingDeleteId) return;
+        const targetId = pendingDeleteId;
+        const entry = state.entries.find(item => item.id === targetId);
+        state.entries = state.entries.filter(item => item.id !== targetId);
+        saveState({ deletedEntryId: targetId });
+        closeDeleteConfirmModal();
+        renderAll();
+        showToast(`Removed ${entry ? entry.party : 'entry'}.`, 'info');
+      });
+
+      // Ringing Alarm Overlay Actions
+      document.getElementById('dismissAlarmBtn').addEventListener('click', () => {
+        closeRingingAlarmModal();
+      });
+
+      document.getElementById('snoozeAlarmBtn').addEventListener('click', () => {
+        if (activeRingingAlarm) {
+          snoozedAlarms.push({
+            triggerAtMs: Date.now() + 10 * 60 * 1000,
+            payload: { ...activeRingingAlarm, subtitle: `Snoozed 10 min · ${activeRingingAlarm.subtitle}` }
+          });
+          showToast(`Snoozed ${activeRingingAlarm.party} for 10 minutes.`, 'info');
+        }
+        closeRingingAlarmModal();
+      });
+
+      document.getElementById('markSettledFromAlarmBtn').addEventListener('click', () => {
+        if (activeRingingAlarm && activeRingingAlarm.entryId) {
+          const entry = state.entries.find(item => item.id === activeRingingAlarm.entryId);
+          if (entry && entry.months) {
+            const nextBlankMonth = MONTHS.find(m => !entry.months[m.key]);
+            if (nextBlankMonth) {
+              entry.months[nextBlankMonth.key] = 'done';
+              saveState({ entryToSave: entry });
+              renderAll();
+              showToast(`Marked ${nextBlankMonth.label} Received/Paid for ${entry.party}.`, 'success');
+            }
+          }
+        }
+        closeRingingAlarmModal();
+      });
+
+      // Alarms & Reminders Modal
+      const alarmsModal = document.getElementById('alarmsModal');
+      document.getElementById('openAlarmsModalBtn').addEventListener('click', () => {
+        renderAlarmsModalContent();
+        alarmsModal.classList.remove('hidden');
+        alarmsModal.classList.add('flex');
+      });
+      document.getElementById('closeAlarmsModalBtn').addEventListener('click', () => {
+        alarmsModal.classList.add('hidden');
+        alarmsModal.classList.remove('flex');
+      });
+
+      document.getElementById('modalGlobalTimeInput').addEventListener('change', e => {
+        state.alarmSettings.globalTime = e.target.value || '09:30';
+        saveState({ metaChanged: true });
+        renderKPIs();
+      });
+
+      document.getElementById('alarmToneSelect').addEventListener('change', e => {
+        state.alarmSettings.tone = e.target.value;
+        saveState({ metaChanged: true });
+        playSingleAlarmPattern();
+      });
+
+      document.getElementById('alarmVolumeInput').addEventListener('input', e => {
+        const val = Number(e.target.value) || 80;
+        state.alarmSettings.volume = val;
+        document.getElementById('alarmVolumeLabel').textContent = `${val}%`;
+        saveState({ metaChanged: true });
+      });
+
+      document.getElementById('testAlarmNowBtn').addEventListener('click', () => {
+        triggerRingingAlarmModal({
+          entryId: null,
+          direction: 'receivable',
+          party: 'Test Payment Reminder · Vedant',
+          amount: 10000,
+          subtitle: `Previewing ${state.alarmSettings.tone || 'chime'} alarm tone`
+        });
+      });
+
+      document.getElementById('requestNotificationPermBtn').addEventListener('click', async () => {
+        if (!('Notification' in window)) {
+          showToast('Desktop notifications are not supported in this browser.', 'error');
+          return;
+        }
+        const perm = await Notification.requestPermission();
+        if (perm === 'granted') {
+          showToast('Desktop notifications enabled for alarms.', 'success');
+        } else {
+          showToast('Notification permission was not granted.', 'info');
+        }
+      });
+
+      document.getElementById('downloadAllIcsBtn').addEventListener('click', downloadAllAlarmsIcs);
+
+      // Per-entry alarm edits inside Alarms Modal
+      document.getElementById('alarmsScheduleList').addEventListener('change', e => {
+        const timeInput = e.target.closest('.alarm-row-time');
+        if (timeInput) {
+          const entry = state.entries.find(item => item.id === timeInput.dataset.alarmTimeId);
+          if (entry) {
+            entry.alarmTime = timeInput.value || '09:30';
+            saveState({ entryToSave: entry });
+            renderAll();
+          }
+          return;
+        }
+        const offsetSelect = e.target.closest('.alarm-row-offset');
+        if (offsetSelect) {
+          const entry = state.entries.find(item => item.id === offsetSelect.dataset.alarmOffsetId);
+          if (entry) {
+            entry.alarmOffsetDays = Number(offsetSelect.value) || 0;
+            saveState({ entryToSave: entry });
+            renderAll();
+          }
+        }
+      });
+
+      document.getElementById('alarmsScheduleList').addEventListener('click', e => {
+        const toggleBtn = e.target.closest('.alarm-row-toggle');
+        if (!toggleBtn) return;
+        const entry = state.entries.find(item => item.id === toggleBtn.dataset.alarmToggleId);
+        if (entry) {
+          entry.alarmEnabled = !entry.alarmEnabled;
+          saveState({ entryToSave: entry });
+          renderAll();
+        }
+      });
+
+      // Add / Edit Entry Form
+      document.getElementById('openAddModalBtn').addEventListener('click', openAddModal);
+      document.getElementById('closeEntryModalBtn').addEventListener('click', closeEntryModal);
+      document.getElementById('cancelEntryModalBtn').addEventListener('click', closeEntryModal);
+
+      document.getElementById('entryForm').addEventListener('submit', e => {
+        e.preventDefault();
+        const existingId = document.getElementById('entryIdInput').value;
+        const direction = document.getElementById('entryDirectionInput').value;
+        const party = document.getElementById('entryPartyInput').value.trim();
+        const disbursementDate = document.getElementById('entryDateInput').value;
+        const principal = Number(document.getElementById('entryPrincipalInput').value);
+        const cycle = document.getElementById('entryCycleInput').value;
+        const rate = Number(document.getElementById('entryRateInput').value);
+        const overrideRaw = document.getElementById('entryInterestOverrideInput').value;
+        const interestOverride = overrideRaw !== '' ? Number(overrideRaw) : null;
+        const owner = document.getElementById('entryOwnerInput').value;
+        const note = document.getElementById('entryNoteInput').value.trim();
+        const alarmEnabled = document.getElementById('entryAlarmEnabledInput').checked;
+        const alarmTime = document.getElementById('entryAlarmTimeInput').value || state.alarmSettings.globalTime || '09:30';
+        const alarmOffsetDays = Number(document.getElementById('entryAlarmOffsetInput').value) || 0;
+
+        if (!party || !disbursementDate || principal <= 0) {
+          showToast('Please enter a valid party name, date, and principal.', 'error');
+          return;
+        }
+
+        let targetEntry = null;
+        if (existingId) {
+          const idx = state.entries.findIndex(item => item.id === existingId);
+          if (idx !== -1) {
+            targetEntry = {
+              ...state.entries[idx],
+              direction,
+              party,
+              disbursementDate,
+              principal,
+              cycle,
+              rate,
+              interestOverride,
+              owner,
+              note,
+              alarmEnabled,
+              alarmTime,
+              alarmOffsetDays
+            };
+            state.entries[idx] = targetEntry;
+            showToast(`Updated ${party}.`, 'success');
+          }
+        } else {
+          targetEntry = {
+            id: `entry-${Date.now()}`,
+            direction,
+            party,
+            disbursementDate,
+            principal,
+            cycle,
+            rate,
+            interestOverride,
+            owner,
+            note,
+            status: 'active',
+            closedDate: '',
+            closeNote: '',
+            alarmEnabled,
+            alarmTime,
+            alarmOffsetDays,
+            initialDoneCount: 0,
+            months: emptyMonthsMap()
+          };
+          state.entries.unshift(targetEntry);
+          showToast(`Added ${party}.`, 'success');
+        }
+
+        saveState({ entryToSave: targetEntry });
+        closeEntryModal();
+        renderAll();
+      });
+
+      // End File Modal
+      document.getElementById('closeEndFileModalBtn').addEventListener('click', closeEndFileModal);
+      document.getElementById('cancelEndFileBtn').addEventListener('click', closeEndFileModal);
+
+      document.getElementById('endFileForm').addEventListener('submit', e => {
+        e.preventDefault();
+        const id = document.getElementById('endFileEntryId').value;
+        const closedDate = document.getElementById('endFileDateInput').value;
+        const closeNote = document.getElementById('endFileNoteInput').value.trim();
+        const entry = state.entries.find(item => item.id === id);
+        if (entry) {
+          entry.status = 'ended';
+          entry.closedDate = closedDate;
+          entry.closeNote = closeNote || 'File closed';
+          saveState({ entryToSave: entry });
+          closeEndFileModal();
+          renderAll();
+          showToast(`Ended file for ${entry.party}.`, 'info');
+        }
+      });
+
+      // Import / Export Modal
+      const ioModal = document.getElementById('ioModal');
+      document.getElementById('openIoModalBtn').addEventListener('click', () => {
+        pendingImportData = null;
+        document.getElementById('importFileInput').value = '';
+        document.getElementById('importPreviewBox').classList.add('hidden');
+        ioModal.classList.remove('hidden');
+        ioModal.classList.add('flex');
+      });
+      document.getElementById('closeIoModalBtn').addEventListener('click', () => {
+        ioModal.classList.add('hidden');
+        ioModal.classList.remove('flex');
+      });
+
+      document.getElementById('exportCsvBtn').addEventListener('click', exportToCsv);
+      document.getElementById('exportJsonBtn').addEventListener('click', exportToJson);
+
+      document.getElementById('importFileInput').addEventListener('change', e => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+          try {
+            const parsed = parseImportedContent(String(reader.result || ''), file.name);
+            pendingImportData = parsed;
+            document.getElementById('importPreviewText').textContent =
+              `Ready to import ${parsed.entries.length} entries from "${file.name}".`;
+            document.getElementById('importPreviewBox').classList.remove('hidden');
+          } catch (err) {
+            pendingImportData = null;
+            document.getElementById('importPreviewBox').classList.add('hidden');
+            showToast(err.message || 'Could not parse import file.', 'error');
+          }
+        };
+        reader.readAsText(file);
+      });
+
+      document.getElementById('cancelImportBtn').addEventListener('click', () => {
+        pendingImportData = null;
+        document.getElementById('importFileInput').value = '';
+        document.getElementById('importPreviewBox').classList.add('hidden');
+      });
+
+      document.getElementById('confirmImportBtn').addEventListener('click', () => {
+        if (!pendingImportData) return;
+        const mode = document.getElementById('importModeSelect').value;
+        if (pendingImportData.members.length) {
+          state.members = Array.from(new Set([...state.members, ...pendingImportData.members]));
+        }
+        if (mode === 'replace') {
+          state.entries = pendingImportData.entries;
+        } else {
+          const mapById = new Map(state.entries.map(item => [item.id, item]));
+          pendingImportData.entries.forEach(item => mapById.set(item.id, item));
+          state.entries = Array.from(mapById.values());
+        }
+        saveState({ replaceAll: true });
+        ioModal.classList.add('hidden');
+        ioModal.classList.remove('flex');
+        renderAll();
+        showToast(`Imported ${pendingImportData.entries.length} entries (${mode}).`, 'success');
+        pendingImportData = null;
+      });
+
+      // Team Modal
+      const teamModal = document.getElementById('teamModal');
+      document.getElementById('openTeamModalBtn').addEventListener('click', () => {
+        renderTeamModalList();
+        teamModal.classList.remove('hidden');
+        teamModal.classList.add('flex');
+      });
+      document.getElementById('closeTeamModalBtn').addEventListener('click', () => {
+        teamModal.classList.add('hidden');
+        teamModal.classList.remove('flex');
+      });
+
+      document.getElementById('addMemberForm').addEventListener('submit', e => {
+        e.preventDefault();
+        const input = document.getElementById('newMemberNameInput');
+        const name = input.value.trim();
+        if (!name) return;
+        if (state.members.some(m => m.toLowerCase() === name.toLowerCase())) {
+          showToast(`${name} is already on the team.`, 'error');
+          return;
+        }
+        state.members.push(name);
+        input.value = '';
+        saveState({ metaChanged: true });
+        renderTeamModalList();
+        renderAll();
+        showToast(`Added ${name} to finance team.`, 'success');
+      });
+
+      document.getElementById('teamMemberList').addEventListener('click', e => {
+        const btn = e.target.closest('.remove-member-btn');
+        if (!btn) return;
+        const memberName = btn.dataset.removeMember;
+        if (state.members.length <= 1) {
+          showToast('At least one finance member must remain.', 'error');
+          return;
+        }
+        state.members = state.members.filter(m => m !== memberName);
+        if (state.activeMember === memberName) state.activeMember = 'All';
+        if (state.ownerFilter === memberName) state.ownerFilter = 'All';
+        saveState({ metaChanged: true });
+        renderTeamModalList();
+        renderAll();
+        showToast(`Removed ${memberName}.`, 'info');
+      });
+
+      // Install / App Guide Modal
+      const appGuideModal = document.getElementById('appGuideModal');
+      document.getElementById('openAppGuideBtn').addEventListener('click', () => {
+        appGuideModal.classList.remove('hidden');
+        appGuideModal.classList.add('flex');
+      });
+      document.getElementById('closeAppGuideBtn').addEventListener('click', () => {
+        appGuideModal.classList.add('hidden');
+        appGuideModal.classList.remove('flex');
+      });
+      document.getElementById('doneAppGuideBtn').addEventListener('click', () => {
+        appGuideModal.classList.add('hidden');
+        appGuideModal.classList.remove('flex');
+      });
+    });
+
+    // Cloud snapshot hook for real-time Firestore sync
+    window.applyCloudLedgerSnapshot = function ({ entries, members, alarmSettings, hasCloudEntries }) {
+      try {
+        if (Array.isArray(members) && members.length) {
+          state.members = Array.from(new Set([...state.members, ...members]));
+        }
+        if (alarmSettings && typeof alarmSettings === 'object') {
+          state.alarmSettings = { ...state.alarmSettings, ...alarmSettings };
+        }
+        if (Array.isArray(entries) && hasCloudEntries) {
+          state.entries = entries.map((item, idx) => normalizeEntry(item, idx));
+        }
+        saveState({ skipCloud: true });
+        renderAll();
+      } catch (err) {
+        console.error('Failed to apply cloud snapshot:', err);
+      }
+    };
+  </script>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
+    import { getAuth, signInAnonymously, signInWithCustomToken } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
+    import {
+      getFirestore,
+      doc,
+      getDoc,
+      setDoc,
+      deleteDoc,
+      onSnapshot,
+      collection
+    } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+
+    const appId = typeof __app_id !== 'undefined' && __app_id ? String(__app_id) : 'finance-ledger-app';
+    const rawConfig = typeof __firebase_config !== 'undefined' ? __firebase_config : null;
+
+    if (!rawConfig) {
+      updateCloudBadge('Local Only', 'neutral');
+    } else {
+      try {
+        updateCloudBadge('Connecting...', 'syncing');
+        const firebaseConfig = typeof rawConfig === 'string' ? JSON.parse(rawConfig) : rawConfig;
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+          await signInAnonymously(auth);
+        }
+
+        const user = auth.currentUser;
+        if (!user) throw new Error('Missing authenticated user.');
+
+        const entriesCol = collection(db, 'artifacts', appId, 'public', 'data', 'ledger_entries');
+        const metaDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'ledger_meta', 'workspace');
+        const seedFlagRef = doc(db, 'artifacts', appId, 'public', 'data', 'ledger_meta', 'seeded_v3');
+
+        const seedSnap = await getDoc(seedFlagRef);
+        if (!seedSnap.exists() && Array.isArray(state.entries) && state.entries.length > 0) {
+          for (const item of state.entries) {
+            await setDoc(doc(entriesCol, item.id), item);
+          }
+          await setDoc(
+            metaDocRef,
+            {
+              members: state.members,
+              alarmSettings: state.alarmSettings,
+              updatedAt: new Date().toISOString()
+            },
+            { merge: true }
+          );
+          await setDoc(seedFlagRef, { seededAt: new Date().toISOString() });
+        }
+
+        let latestEntries = null;
+        let latestMembers = null;
+        let latestAlarmSettings = null;
+        let hasCloudEntries = false;
+
+        const pushSnapshotToUi = () => {
+          if (typeof window.applyCloudLedgerSnapshot === 'function') {
+            window.applyCloudLedgerSnapshot({
+              entries: latestEntries,
+              members: latestMembers,
+              alarmSettings: latestAlarmSettings,
+              hasCloudEntries
+            });
+          }
+        };
+
+        onSnapshot(
+          entriesCol,
+          snap => {
+            hasCloudEntries = true;
+            latestEntries = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            updateCloudBadge('Cloud Live', 'live');
+            pushSnapshotToUi();
+          },
+          err => {
+            console.error('Firestore entries error:', err);
+            updateCloudBadge('Cloud Error', 'error');
+          }
+        );
+
+        onSnapshot(
+          metaDocRef,
+          snap => {
+            if (snap.exists()) {
+              const data = snap.data();
+              if (Array.isArray(data.members) && data.members.length) {
+                latestMembers = data.members;
+              }
+              if (data.alarmSettings) {
+                latestAlarmSettings = data.alarmSettings;
+              }
+              pushSnapshotToUi();
+            }
+          },
+          err => {
+            console.error('Firestore meta error:', err);
+          }
+        );
+
+        cloudBridge.enabled = true;
+        cloudBridge.user = user;
+        cloudBridge.saveEntry = async entry => {
+          if (!auth.currentUser || !entry || !entry.id) return;
+          try {
+            updateCloudBadge('Syncing...', 'syncing');
+            await setDoc(doc(entriesCol, entry.id), {
+              ...entry,
+              updatedBy: state.activeMember || 'All',
+              updatedByUid: auth.currentUser.uid,
+              updatedAt: new Date().toISOString()
+            });
+            updateCloudBadge('Cloud Live', 'live');
+          } catch (err) {
+            console.error('Firestore saveEntry error:', err);
+            updateCloudBadge('Sync Failed', 'error');
+          }
+        };
+        cloudBridge.deleteEntry = async entryId => {
+          if (!auth.currentUser || !entryId) return;
+          try {
+            updateCloudBadge('Syncing...', 'syncing');
+            await deleteDoc(doc(entriesCol, entryId));
+            updateCloudBadge('Cloud Live', 'live');
+          } catch (err) {
+            console.error('Firestore deleteEntry error:', err);
+            updateCloudBadge('Sync Failed', 'error');
+          }
+        };
+        cloudBridge.saveMeta = async meta => {
+          if (!auth.currentUser) return;
+          try {
+            await setDoc(
+              metaDocRef,
+              {
+                ...meta,
+                updatedByUid: auth.currentUser.uid,
+                updatedAt: new Date().toISOString()
+              },
+              { merge: true }
+            );
+          } catch (err) {
+            console.error('Firestore saveMeta error:', err);
+          }
+        };
+        cloudBridge.replaceAllEntries = async (entriesList, membersList, alarmSettingsObj) => {
+          if (!auth.currentUser) return;
+          try {
+            updateCloudBadge('Syncing...', 'syncing');
+            for (const item of entriesList) {
+              await setDoc(doc(entriesCol, item.id), {
+                ...item,
+                updatedByUid: auth.currentUser.uid,
+                updatedAt: new Date().toISOString()
+              });
+            }
+            await setDoc(
+              metaDocRef,
+              {
+                members: membersList,
+                alarmSettings: alarmSettingsObj,
+                updatedByUid: auth.currentUser.uid,
+                updatedAt: new Date().toISOString()
+              },
+              { merge: true }
+            );
+            updateCloudBadge('Cloud Live', 'live');
+          } catch (err) {
+            console.error('Firestore replaceAll error:', err);
+            updateCloudBadge('Sync Failed', 'error');
+          }
+        };
+      } catch (err) {
+        console.error('Firebase setup error:', err);
+        updateCloudBadge('Local Fallback', 'error');
+      }
+    }
+  </script>
+</body>
+</html>
